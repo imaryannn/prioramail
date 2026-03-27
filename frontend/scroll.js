@@ -7,9 +7,9 @@ const SCROLL_THRESHOLD = 2;
 const RESET_TIME = 1500;
 const SNAP_COOLDOWN = 1000;
 
-const loginScreen = document.getElementById('login-screen');
+const scrollLoginScreen = document.getElementById('login-screen');
 
-if (loginScreen) {
+if (scrollLoginScreen) {
     let currentSectionIndex = 0;
     const sections = document.querySelectorAll('.hero-section, .how-it-works, .stats-section, .features-section, .cta-section, .footer');
     
@@ -18,7 +18,7 @@ if (loginScreen) {
         sections[0].classList.add('active');
     }
     
-    loginScreen.addEventListener('wheel', (e) => {
+    scrollLoginScreen.addEventListener('wheel', (e) => {
         if (isSnapping) {
             e.preventDefault();
             return;
@@ -87,7 +87,7 @@ if (loginScreen) {
                 sections[prevIndex].style.transform = prevAnim.out.transform;
                 
                 // Scroll to target with custom smooth animation
-                const start = loginScreen.scrollTop;
+                const start = scrollLoginScreen.scrollTop;
                 const target = sections[targetIndex].offsetTop;
                 const distance = target - start;
                 const duration = 1000;
@@ -103,7 +103,7 @@ if (loginScreen) {
                         ? 4 * progress * progress * progress
                         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
                     
-                    loginScreen.scrollTop = start + distance * easeProgress;
+                    scrollLoginScreen.scrollTop = start + distance * easeProgress;
                     
                     if (progress < 1) {
                         requestAnimationFrame(animate);

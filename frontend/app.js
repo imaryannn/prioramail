@@ -4,7 +4,8 @@ const state = {
     emails: [],
     currentView: 'inbox',
     currentPriority: 'focus',
-    selectedEmail: null
+    selectedEmail: null,
+    searchQuery: ''
 };
 
 // DOM Elements
@@ -15,23 +16,32 @@ const emailList = document.getElementById('email-list');
 const emailView = document.getElementById('email-view');
 const composeModal = document.getElementById('compose-modal');
 const composeForm = document.getElementById('compose-form');
+const searchInput = document.getElementById('search-input');
 
 // Initialize App
 function init() {
     setupEventListeners();
-    // Check if user is already logged in
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-        state.user = JSON.parse(savedUser);
-        showMainScreen();
-        loadEmails();
-    }
+    // Always start at login screen (remove this to enable persistent login)
+    localStorage.removeItem('user');
 }
 
 // Event Listeners
 function setupEventListeners() {
     // Login
-    googleLoginBtn.addEventListener('click', handleGoogleLogin);
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', handleGoogleLogin);
+    }
+    
+    // CTA button
+    const ctaBtn = document.querySelector('.btn-cta');
+    if (ctaBtn) {
+        ctaBtn.addEventListener('click', handleGoogleLogin);
+    }
+
+    // Search
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+    }
 
     // Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -51,32 +61,39 @@ function setupEventListeners() {
     });
 
     // Compose
-    document.querySelector('.btn-compose').addEventListener('click', openComposeModal);
-    document.querySelector('.btn-close').addEventListener('click', closeComposeModal);
-    document.querySelector('.btn-cancel').addEventListener('click', closeComposeModal);
-    composeForm.addEventListener('submit', handleSendEmail);
-
-    // Back button
-    document.querySelector('.btn-back').addEventListener('click', () => {
-        emailView.classList.add('hidden');
-        emailList.style.display = 'block';
-    });
+    const composeBtn = document.querySelector('.btn-compose');
+    const closeBtn = document.querySelector('.btn-close');
+    const cancelBtn = document.querySelector('.btn-cancel');
+    const backBtn = document.querySelector('.btn-back');
+    
+    if (composeBtn) composeBtn.addEventListener('click', openComposeModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeComposeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeComposeModal);
+    if (composeForm) composeForm.addEventListener('submit', handleSendEmail);
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            emailView.classList.add('hidden');
+            emailList.style.display = 'block';
+        });
+    }
 }
 
 // Authentication
 async function handleGoogleLogin() {
+    console.log('Login button clicked');
     try {
         // TODO: Implement actual Google OAuth
         // For now, simulate login
         const mockUser = {
             email: 'user@example.com',
             name: 'User',
-            avatar: 'https://via.placeholder.com/40'
+            avatar: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Ccircle cx="20" cy="20" r="20" fill="%2384A98C"/%3E%3Ctext x="20" y="26" font-size="18" fill="white" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600"%3EU%3C/text%3E%3C/svg%3E'
         };
         
         state.user = mockUser;
         localStorage.setItem('user', JSON.stringify(mockUser));
         
+        console.log('Showing main screen');
         showMainScreen();
         loadEmails();
     } catch (error) {
@@ -86,8 +103,18 @@ async function handleGoogleLogin() {
 }
 
 function showMainScreen() {
+    console.log('showMainScreen called');
+    console.log('loginScreen:', loginScreen);
+    console.log('mainScreen:', mainScreen);
+    console.log('loginScreen computed display:', window.getComputedStyle(loginScreen).display);
+    console.log('mainScreen computed display BEFORE:', window.getComputedStyle(mainScreen).display);
+    
     loginScreen.classList.remove('active');
     mainScreen.classList.add('active');
+    
+    console.log('loginScreen classes:', loginScreen.className);
+    console.log('mainScreen classes:', mainScreen.className);
+    console.log('mainScreen computed display AFTER:', window.getComputedStyle(mainScreen).display);
     
     // Update user info
     document.getElementById('user-avatar').src = state.user.avatar;
@@ -107,30 +134,102 @@ async function loadEmails() {
 }
 
 function getMockEmails() {
+    const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Ccircle cx="20" cy="20" r="20" fill="%2352796F"/%3E%3Ctext x="20" y="26" font-size="18" fill="white" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600"%3E?%3C/text%3E%3C/svg%3E';
+    
     return [
         {
             id: '1',
-            from: { name: 'Sarah Johnson', email: 'sarah@company.com' },
+            from: { name: 'Priya Sharma', email: 'priya.sharma@techcorp.in', avatar: defaultAvatar },
             subject: 'Q4 Project Deadline',
             preview: 'Hi team, just a reminder that the Q4 project deadline is approaching...',
-            body: 'Hi team,\n\nJust a reminder that the Q4 project deadline is approaching. Please ensure all deliverables are submitted by Friday.\n\nBest regards,\nSarah',
+            body: 'Hi team,\n\nJust a reminder that the Q4 project deadline is approaching. Please ensure all deliverables are submitted by Friday.\n\nBest regards,\nPriya',
             date: new Date('2024-01-15T10:30:00'),
             unread: true,
             priority: 'focus'
         },
         {
             id: '2',
-            from: { name: 'Marketing Team', email: 'marketing@company.com' },
-            subject: 'Weekly Newsletter',
-            preview: 'Check out this week\'s highlights and upcoming events...',
-            body: 'Check out this week\'s highlights and upcoming events. We have some exciting announcements!',
-            date: new Date('2024-01-15T09:15:00'),
+            from: { name: 'Rahul Verma', email: 'rahul.verma@company.com', avatar: defaultAvatar },
+            subject: 'Meeting Tomorrow at 2 PM',
+            preview: 'Don\'t forget about our meeting tomorrow at 2 PM...',
+            body: 'Hi,\n\nDon\'t forget about our meeting tomorrow at 2 PM. I\'ll send the Zoom link shortly.\n\nThanks,\nRahul',
+            date: new Date('2024-01-15T11:00:00'),
+            unread: true,
+            priority: 'focus'
+        },
+        {
+            id: '3',
+            from: { name: 'Ananya Reddy', email: 'ananya.reddy@startup.io', avatar: defaultAvatar },
+            subject: 'Client Presentation Feedback',
+            preview: 'Great job on the presentation! The client loved it...',
+            body: 'Hi,\n\nGreat job on the presentation! The client loved it and wants to move forward with the proposal.\n\nBest,\nAnanya',
+            date: new Date('2024-01-15T09:45:00'),
+            unread: true,
+            priority: 'focus'
+        },
+        {
+            id: '4',
+            from: { name: 'Vikram Patel', email: 'vikram@designstudio.com', avatar: defaultAvatar },
+            subject: 'Design Review Scheduled',
+            preview: 'The design review has been scheduled for next Monday...',
+            body: 'Hi team,\n\nThe design review has been scheduled for next Monday at 10 AM. Please review the mockups beforehand.\n\nRegards,\nVikram',
+            date: new Date('2024-01-15T08:20:00'),
+            unread: false,
+            priority: 'focus'
+        },
+        {
+            id: '5',
+            from: { name: 'Sneha Gupta', email: 'sneha.gupta@marketing.in', avatar: defaultAvatar },
+            subject: 'Campaign Performance Report',
+            preview: 'Here\'s the performance report for last month\'s campaign...',
+            body: 'Hi,\n\nHere\'s the performance report for last month\'s campaign. Overall results exceeded our targets by 15%.\n\nBest,\nSneha',
+            date: new Date('2024-01-14T16:30:00'),
             unread: false,
             priority: 'later'
         },
         {
-            id: '3',
-            from: { name: 'LinkedIn', email: 'notifications@linkedin.com' },
+            id: '6',
+            from: { name: 'Arjun Mehta', email: 'arjun@consulting.com', avatar: defaultAvatar },
+            subject: 'Invoice for December Services',
+            preview: 'Please find attached the invoice for December consulting services...',
+            body: 'Dear team,\n\nPlease find attached the invoice for December consulting services. Payment is due by the 30th.\n\nThank you,\nArjun',
+            date: new Date('2024-01-14T14:15:00'),
+            unread: false,
+            priority: 'later'
+        },
+        {
+            id: '7',
+            from: { name: 'Kavya Iyer', email: 'kavya.iyer@hr.company.in', avatar: defaultAvatar },
+            subject: 'Team Building Event Next Week',
+            preview: 'We\'re organizing a team building event next Friday...',
+            body: 'Hi everyone,\n\nWe\'re organizing a team building event next Friday. Please RSVP by Wednesday.\n\nLooking forward,\nKavya',
+            date: new Date('2024-01-14T11:00:00'),
+            unread: false,
+            priority: 'later'
+        },
+        {
+            id: '8',
+            from: { name: 'Rohan Kumar', email: 'rohan.kumar@tech.io', avatar: defaultAvatar },
+            subject: 'Code Review Request',
+            preview: 'Could you please review my pull request when you get a chance?',
+            body: 'Hey,\n\nCould you please review my pull request when you get a chance? It\'s for the authentication module.\n\nThanks,\nRohan',
+            date: new Date('2024-01-15T07:30:00'),
+            unread: true,
+            priority: 'focus'
+        },
+        {
+            id: '9',
+            from: { name: 'Meera Nair', email: 'meera@finance.com', avatar: defaultAvatar },
+            subject: 'Budget Approval Required',
+            preview: 'The Q1 budget proposal needs your approval...',
+            body: 'Hi,\n\nThe Q1 budget proposal needs your approval. Please review and sign off by end of day.\n\nRegards,\nMeera',
+            date: new Date('2024-01-15T06:45:00'),
+            unread: true,
+            priority: 'focus'
+        },
+        {
+            id: '10',
+            from: { name: 'LinkedIn', email: 'notifications@linkedin.com', avatar: defaultAvatar },
             subject: 'You have 5 new connection requests',
             preview: 'Expand your professional network...',
             body: 'Expand your professional network by accepting these connection requests.',
@@ -139,12 +238,52 @@ function getMockEmails() {
             priority: 'ignore'
         },
         {
-            id: '4',
-            from: { name: 'John Doe', email: 'john@example.com' },
-            subject: 'Meeting Tomorrow',
-            preview: 'Don\'t forget about our meeting tomorrow at 2 PM...',
-            body: 'Hi,\n\nDon\'t forget about our meeting tomorrow at 2 PM. I\'ll send the Zoom link shortly.\n\nThanks,\nJohn',
-            date: new Date('2024-01-15T11:00:00'),
+            id: '11',
+            from: { name: 'Amazon', email: 'shipment@amazon.in', avatar: defaultAvatar },
+            subject: 'Your order has been shipped',
+            preview: 'Your order #12345 has been shipped and will arrive by Friday...',
+            body: 'Your order #12345 has been shipped and will arrive by Friday. Track your package using the link below.',
+            date: new Date('2024-01-14T10:20:00'),
+            unread: false,
+            priority: 'ignore'
+        },
+        {
+            id: '12',
+            from: { name: 'Swiggy', email: 'offers@swiggy.com', avatar: defaultAvatar },
+            subject: '50% off on your next order!',
+            preview: 'Use code SAVE50 to get 50% off on orders above ₹299...',
+            body: 'Use code SAVE50 to get 50% off on orders above ₹299. Valid till this weekend only!',
+            date: new Date('2024-01-13T18:30:00'),
+            unread: false,
+            priority: 'ignore'
+        },
+        {
+            id: '13',
+            from: { name: 'Aditya Singh', email: 'aditya.singh@sales.com', avatar: defaultAvatar },
+            subject: 'Sales Target Achievement',
+            preview: 'Congratulations! We\'ve exceeded our monthly sales target...',
+            body: 'Hi team,\n\nCongratulations! We\'ve exceeded our monthly sales target by 20%. Great work everyone!\n\nCheers,\nAditya',
+            date: new Date('2024-01-13T15:00:00'),
+            unread: false,
+            priority: 'later'
+        },
+        {
+            id: '14',
+            from: { name: 'Divya Krishnan', email: 'divya@product.io', avatar: defaultAvatar },
+            subject: 'Product Roadmap Q1 2024',
+            preview: 'Sharing the updated product roadmap for Q1...',
+            body: 'Hi everyone,\n\nSharing the updated product roadmap for Q1. Please review and share your feedback.\n\nThanks,\nDivya',
+            date: new Date('2024-01-13T12:30:00'),
+            unread: false,
+            priority: 'later'
+        },
+        {
+            id: '15',
+            from: { name: 'Karthik Rao', email: 'karthik@support.com', avatar: defaultAvatar },
+            subject: 'Customer Support Ticket #4567',
+            preview: 'A high-priority customer issue needs immediate attention...',
+            body: 'Hi,\n\nA high-priority customer issue needs immediate attention. Customer is facing login problems.\n\nUrgent,\nKarthik',
+            date: new Date('2024-01-15T12:15:00'),
             unread: true,
             priority: 'focus'
         }
@@ -153,18 +292,31 @@ function getMockEmails() {
 
 // Rendering
 function renderEmailList() {
-    const filteredEmails = state.emails.filter(email => 
+    let filteredEmails = state.emails.filter(email => 
         email.priority === state.currentPriority
     );
 
+    // Apply search filter
+    if (state.searchQuery) {
+        filteredEmails = filteredEmails.filter(email => 
+            email.from.name.toLowerCase().includes(state.searchQuery) ||
+            email.from.email.toLowerCase().includes(state.searchQuery) ||
+            email.subject.toLowerCase().includes(state.searchQuery) ||
+            email.body.toLowerCase().includes(state.searchQuery)
+        );
+    }
+
     if (filteredEmails.length === 0) {
-        emailList.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 3rem;">No emails in this category</p>';
+        const message = state.searchQuery 
+            ? `No emails found for "${state.searchQuery}"`
+            : 'No emails in this category';
+        emailList.innerHTML = `<div class="email-list-container"><p style="color: var(--text-light); text-align: center; padding: 3rem;">${message}</p></div>`;
         return;
     }
 
-    emailList.innerHTML = filteredEmails.map(email => `
+    const emailItems = filteredEmails.map(email => `
         <div class="email-item ${email.unread ? 'unread' : ''}" data-id="${email.id}">
-            <img src="${email.from.avatar || 'https://via.placeholder.com/40'}" alt="${email.from.name}" class="avatar-small">
+            <img src="${email.from.avatar}" alt="${email.from.name}" class="avatar-small">
             <div>
                 <div class="email-sender">${email.from.name}</div>
                 <div class="email-subject">${email.subject}</div>
@@ -173,6 +325,8 @@ function renderEmailList() {
             <div class="email-time">${formatDate(email.date)}</div>
         </div>
     `).join('');
+    
+    emailList.innerHTML = `<div class="email-list-container">${emailItems}</div>`;
 
     // Add click listeners
     document.querySelectorAll('.email-item').forEach(item => {
@@ -191,7 +345,7 @@ function showEmail(emailId) {
     email.unread = false;
 
     document.getElementById('email-subject').textContent = email.subject;
-    document.getElementById('sender-avatar').src = email.from.avatar || 'https://via.placeholder.com/32';
+    document.getElementById('sender-avatar').src = email.from.avatar;
     document.getElementById('sender-name').textContent = email.from.name;
     document.getElementById('sender-email').textContent = email.from.email;
     document.getElementById('email-date').textContent = formatDate(email.date);
@@ -204,12 +358,33 @@ function showEmail(emailId) {
 // Navigation
 function switchView(view) {
     state.currentView = view;
+    state.searchQuery = '';
+    if (searchInput) searchInput.value = '';
     
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.view === view);
     });
 
-    loadEmails();
+    // Show/hide priority tabs based on view
+    const priorityTabs = document.querySelector('.priority-tabs');
+    if (view === 'inbox') {
+        priorityTabs.style.display = 'flex';
+        loadEmails();
+    } else {
+        priorityTabs.style.display = 'none';
+        showViewMessage(view);
+    }
+}
+
+function showViewMessage(view) {
+    const messages = {
+        sent: 'Sent emails will appear here',
+        drafts: 'Draft emails will appear here',
+        starred: 'Starred emails will appear here',
+        trash: 'Deleted emails will appear here'
+    };
+    
+    emailList.innerHTML = `<div class="email-list-container"><p style="color: var(--text-light); text-align: center; padding: 3rem;">${messages[view] || 'No emails'}</p></div>`;
 }
 
 function switchPriority(priority) {
@@ -221,6 +396,12 @@ function switchPriority(priority) {
 
     emailView.classList.add('hidden');
     emailList.style.display = 'block';
+    renderEmailList();
+}
+
+// Search
+function handleSearch(e) {
+    state.searchQuery = e.target.value.toLowerCase();
     renderEmailList();
 }
 
