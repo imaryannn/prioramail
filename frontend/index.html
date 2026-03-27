@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prioramail - Smart Email Client</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <!-- Hero Section (100vh) -->
+            <div class="hero-section">
+                <!-- Left Side - Logo & Doodle -->
+                <div class="login-left">
+                    <h1 class="logo"><span class="logo-priora">Priora</span><span class="logo-mail">mail</span></h1>
+                    <div class="doodle-container">
+                        <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Envelope -->
+                            <path d="M80 120 L200 200 L320 120" stroke="#52796F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="60" y="120" width="280" height="200" rx="12" stroke="#52796F" stroke-width="3" fill="none"/>
+                            <path d="M60 120 L200 220 L340 120" stroke="#84A98C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                            
+                            <!-- Decorative elements -->
+                            <circle cx="100" cy="80" r="4" fill="#84A98C" opacity="0.4"/>
+                            <circle cx="300" cy="90" r="6" fill="#52796F" opacity="0.3"/>
+                            <circle cx="320" cy="340" r="5" fill="#84A98C" opacity="0.4"/>
+                            <circle cx="80" cy="350" r="4" fill="#52796F" opacity="0.3"/>
+                            
+                            <!-- Abstract lines -->
+                            <path d="M 40 60 Q 60 40 80 60" stroke="#CAD2C5" stroke-width="2" stroke-linecap="round" fill="none"/>
+                            <path d="M 340 360 Q 360 340 380 360" stroke="#CAD2C5" stroke-width="2" stroke-linecap="round" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Right Side - Content -->
+                <div class="login-container">
+                    <h2 class="login-title">Your inbox, reimagined</h2>
+                    <p class="tagline">Focus on what matters</p>
+                    <button id="google-login-btn" class="btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+                            <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z" fill="#FBBC05"/>
+                            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                    
+                    <div class="features">
+                        <div class="feature-item">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <div>
+                                <h3>Smart Priority</h3>
+                                <p>Automatically sorts your emails by importance</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <div>
+                                <h3>Secure & Private</h3>
+                                <p>Your data stays protected with enterprise-grade security</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            <div>
+                                <h3>Lightning Fast</h3>
+                                <p>Minimal design for maximum productivity</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <div>
+                                <h3>Save Time</h3>
+                                <p>Focus on important emails, ignore the noise</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Sections Below Hero -->
+            <div class="additional-sections">
+                <!-- How It Works Section -->
+                <div class="how-it-works">
+                    <div class="section-content">
+                        <div class="section-text">
+                            <h3 class="section-title">How It Works</h3>
+                            <p class="section-description">Prioramail connects directly to your Gmail account and uses intelligent algorithms to analyze your emails. Every message is automatically categorized into Focus, Later, or Other—so you always know what needs your attention right now.</p>
+                            <div class="steps">
+                                <div class="step">
+                                    <div class="step-number">1</div>
+                                    <h4>Connect Your Gmail</h4>
+                                    <p>Sign in securely with Google OAuth. We never store your password or email content.</p>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">2</div>
+                                    <h4>Automatic Sorting</h4>
+                                    <p>Our AI analyzes sender patterns, keywords, and your behavior to prioritize emails.</p>
+                                </div>
+                                <div class="step">
+                                    <div class="step-number">3</div>
+                                    <h4>Stay Focused</h4>
+                                    <p>Handle urgent emails first, schedule others for later, and let the noise fade away.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-visual">
+                            <svg viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Email stack with priority indicators -->
+                                <rect x="100" y="100" width="300" height="80" rx="12" fill="#FAFBFC" stroke="#52796F" stroke-width="2"/>
+                                <circle cx="130" cy="140" r="8" fill="#EF4444"/>
+                                <line x1="160" y1="130" x2="320" y2="130" stroke="#2F3E46" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="160" y1="150" x2="280" y2="150" stroke="#84A98C" stroke-width="2" stroke-linecap="round"/>
+                                
+                                <rect x="100" y="200" width="300" height="80" rx="12" fill="#FAFBFC" stroke="#52796F" stroke-width="2"/>
+                                <circle cx="130" cy="240" r="8" fill="#F59E0B"/>
+                                <line x1="160" y1="230" x2="320" y2="230" stroke="#2F3E46" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="160" y1="250" x2="280" y2="250" stroke="#84A98C" stroke-width="2" stroke-linecap="round"/>
+                                
+                                <rect x="100" y="300" width="300" height="80" rx="12" fill="#FAFBFC" stroke="#52796F" stroke-width="2"/>
+                                <circle cx="130" cy="340" r="8" fill="#9CA3AF"/>
+                                <line x1="160" y1="330" x2="320" y2="330" stroke="#2F3E46" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="160" y1="350" x2="280" y2="350" stroke="#84A98C" stroke-width="2" stroke-linecap="round"/>
+                                
+                                <!-- Arrow showing flow -->
+                                <path d="M 420 140 L 460 140 L 460 340 L 420 340" stroke="#52796F" stroke-width="3" stroke-linecap="round" fill="none" marker-end="url(#arrowhead)"/>
+                                <defs>
+                                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                        <polygon points="0 0, 10 3, 0 6" fill="#52796F" />
+                                    </marker>
+                                </defs>
+                                
+                                <!-- Decorative elements -->
+                                <circle cx="60" cy="120" r="6" fill="#84A98C" opacity="0.4"/>
+                                <circle cx="440" cy="380" r="8" fill="#52796F" opacity="0.3"/>
+                                <path d="M 40 380 Q 60 360 80 380" stroke="#CAD2C5" stroke-width="2" stroke-linecap="round" fill="none"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Benefits Section -->
+                <div class="stats-section">
+                    <div class="section-content">
+                        <div class="section-visual">
+                            <svg viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Shield with checkmark -->
+                                <path d="M 250 80 L 350 120 L 350 240 C 350 300 250 380 250 380 C 250 380 150 300 150 240 L 150 120 Z" fill="#FAFBFC" stroke="#52796F" stroke-width="3"/>
+                                <path d="M 200 240 L 230 270 L 300 200" stroke="#84A98C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                
+                                <!-- Floating elements -->
+                                <circle cx="120" cy="150" r="20" fill="#CAD2C5" opacity="0.5"/>
+                                <circle cx="380" cy="180" r="15" fill="#84A98C" opacity="0.4"/>
+                                <circle cx="100" cy="320" r="12" fill="#52796F" opacity="0.3"/>
+                                <circle cx="400" cy="340" r="18" fill="#CAD2C5" opacity="0.5"/>
+                                
+                                <!-- Abstract lines -->
+                                <path d="M 80 100 Q 100 80 120 100" stroke="#84A98C" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+                                <path d="M 380 400 Q 400 380 420 400" stroke="#52796F" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+                                
+                                <!-- Lock icon -->
+                                <rect x="230" y="420" width="40" height="50" rx="4" fill="#52796F" opacity="0.7"/>
+                                <path d="M 235 420 L 235 405 C 235 395 245 385 250 385 C 255 385 265 395 265 405 L 265 420" stroke="#52796F" stroke-width="3" fill="none"/>
+                            </svg>
+                        </div>
+                        <div class="section-text">
+                            <h3 class="section-title">Why Prioramail?</h3>
+                            <p class="section-description">Built for professionals who value their time and need to stay focused on what truly matters. Prioramail isn't just another email client—it's a productivity tool designed to help you reclaim hours every week.</p>
+                            <div class="benefits">
+                                <div class="benefit-item">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                        <path d="M2 17l10 5 10-5"></path>
+                                        <path d="M2 12l10 5 10-5"></path>
+                                    </svg>
+                                    <h4>Three Priority Levels</h4>
+                                    <p>Focus on urgent emails that need immediate attention. Save important but non-urgent messages for later. Let promotional and low-priority emails stay out of sight until you're ready.</p>
+                                </div>
+                                <div class="benefit-item">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                    </svg>
+                                    <h4>Clean, Distraction-Free Interface</h4>
+                                    <p>No clutter, no ads, no unnecessary features. Just your emails organized exactly the way they should be. Every pixel is designed for clarity and speed.</p>
+                                </div>
+                                <div class="benefit-item">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                    <h4>Privacy First, Always</h4>
+                                    <p>We never store your emails on our servers. Everything stays securely in your Gmail account. We only read what's necessary to sort your inbox—nothing more.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-screen" class="screen">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h2 class="logo-small"><span class="logo-priora">Priora</span><span class="logo-mail">mail</span></h2>
+                <button class="btn-compose">+ Compose</button>
+                <nav class="nav">
+                    <a href="#" class="nav-item active" data-view="inbox">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                        </svg>
+                        <span>Inbox</span>
+                    </a>
+                    <a href="#" class="nav-item" data-view="sent">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span>Sent</span>
+                    </a>
+                </nav>
+                <div class="user-info">
+                    <img id="user-avatar" src="" alt="User" class="avatar">
+                    <span id="user-email" class="user-email"></span>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Priority Tabs -->
+                <div class="priority-tabs">
+                    <button class="tab active" data-priority="focus">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Focus
+                    </button>
+                    <button class="tab" data-priority="later">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Later
+                    </button>
+                    <button class="tab" data-priority="ignore">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Other
+                    </button>
+                </div>
+
+                <!-- Email List -->
+                <div id="email-list" class="email-list">
+                    <!-- Emails will be injected here -->
+                </div>
+
+                <!-- Email View -->
+                <div id="email-view" class="email-view hidden">
+                    <button class="btn-back">← Back</button>
+                    <div class="email-header">
+                        <h2 id="email-subject"></h2>
+                        <div class="email-meta">
+                            <img id="sender-avatar" src="" alt="" class="avatar-small">
+                            <div>
+                                <div id="sender-name" class="sender-name"></div>
+                                <div id="sender-email" class="sender-email"></div>
+                            </div>
+                            <span id="email-date" class="email-date"></span>
+                        </div>
+                    </div>
+                    <div id="email-body" class="email-body"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Compose Modal -->
+        <div id="compose-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>New Message</h3>
+                    <button class="btn-close">×</button>
+                </div>
+                <form id="compose-form">
+                    <input type="email" id="compose-to" placeholder="To" required>
+                    <input type="text" id="compose-subject" placeholder="Subject">
+                    <textarea id="compose-body" placeholder="Message" rows="12"></textarea>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary">Send</button>
+                        <button type="button" class="btn-secondary btn-cancel">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
