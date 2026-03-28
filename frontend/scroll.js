@@ -181,7 +181,28 @@ if (scrollLoginScreen) {
     // Touch events - allow native scrolling
     scrollLoginScreen.addEventListener('touchstart', (e) => {
         isTouching = true;
+        touchStartY = e.touches[0].clientY;
         touchStartScrollTop = scrollLoginScreen.scrollTop;
+    }, { passive: true });
+    
+    scrollLoginScreen.addEventListener('touchmove', (e) => {
+        if (!isTouching) return;
+        
+        const touchY = e.touches[0].clientY;
+        const deltaY = touchStartY - touchY;
+        
+        // Check if we've scrolled enough to trigger a section change
+        if (Math.abs(deltaY) > TOUCH_THRESHOLD) {
+            const direction = deltaY > 0 ? 1 : -1;
+            
+            // Check if we can move to next/prev section
+            const targetIndex = currentSectionIndex + direction;
+            if (targetIndex >= 0 && targetIndex < sections.length && !isSnapping) {
+                // Trigger snap immediately without waiting for touchend
+                isTouching = false;
+                handleScroll(direction, true);
+            }
+        }
     }, { passive: true });
     
     scrollLoginScreen.addEventListener('touchend', (e) => {
