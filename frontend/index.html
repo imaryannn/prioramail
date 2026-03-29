@@ -17,23 +17,24 @@
             <div class="hero-section">
                 <!-- Left Side - Logo & Doodle -->
                 <div class="login-left">
-                    <h1 class="logo"><span class="logo-priora">Priora</span><span class="logo-mail">mail</span></h1>
-                    <div class="doodle-container">
-                        <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div class="logo-animation-container">
+                        <svg id="animatedLogo" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Logo text -->
+                            <g id="logoText">
+                                <text x="150" y="100" text-anchor="middle" font-size="48" font-weight="700" fill="#2F4F4F">Priora</text>
+                                <text x="150" y="130" text-anchor="middle" font-size="48" font-weight="700" fill="#52796F">mail</text>
+                            </g>
+                            
                             <!-- Envelope -->
-                            <path d="M80 120 L200 200 L320 120" stroke="#52796F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <rect x="60" y="120" width="280" height="200" rx="12" stroke="#52796F" stroke-width="3" fill="none"/>
-                            <path d="M68 120 L200 220 L330 120" stroke="#84A98C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                            <g id="envelope" opacity="0">
+                                <rect x="75" y="60" width="150" height="100" rx="6" fill="#FAFBFC" stroke="#52796F" stroke-width="2.5"/>
+                                <path d="M 75 60 L 150 120 L 225 60" stroke="#52796F" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+                            </g>
                             
-                            <!-- Decorative elements -->
-                            <circle cx="100" cy="80" r="4" fill="#84A98C" opacity="0.4"/>
-                            <circle cx="300" cy="90" r="6" fill="#52796F" opacity="0.3"/>
-                            <circle cx="320" cy="340" r="5" fill="#84A98C" opacity="0.4"/>
-                            <circle cx="80" cy="350" r="4" fill="#52796F" opacity="0.3"/>
-                            
-                            <!-- Abstract lines -->
-                            <path d="M 40 60 Q 60 40 80 60" stroke="#CAD2C5" stroke-width="2" stroke-linecap="round" fill="none"/>
-                            <path d="M 340 360 Q 360 340 380 360" stroke="#CAD2C5" stroke-width="2" stroke-linecap="round" fill="none"/>
+                            <!-- Paper plane -->
+                            <g id="paperPlane" opacity="0">
+                                <path d="M 0 0 L 30 10 L 0 20 L 5 10 Z" fill="#52796F" stroke="#2F4F4F" stroke-width="1.5"/>
+                            </g>
                         </svg>
                     </div>
                 </div>
@@ -486,6 +487,7 @@
         </div>
     </div>
 
+    <script src="logo-animation.js"></script>
     <script src="scroll.js"></script>
     <script src="app.js"></script>
 </body>
