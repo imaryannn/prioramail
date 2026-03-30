@@ -119,7 +119,7 @@ body {
 
 .doodle-container {
     width: 100%;
-    max-width: 450px;
+    max-width: 600px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -157,7 +157,7 @@ body {
 
 .logo {
     font-family: 'Playfair Display', serif;
-    font-size: 3.5rem;
+    font-size: 4.5rem;
     font-weight: 700;
     color: var(--primary);
     margin: 0;
@@ -265,11 +265,11 @@ body {
     
     .login-left .logo {
         margin-bottom: 1rem;
-        font-size: 1.75rem;
+        font-size: 2.25rem;
     }
     
     .doodle-container {
-        max-width: 220px;
+        max-width: 320px;
     }
     
     .logo-animation-container {
