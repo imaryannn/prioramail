@@ -194,6 +194,7 @@ async function loadEmails() {
                 subject: email.subject || '(No Subject)',
                 preview: email.snippet || '',
                 body: email.body || email.snippet || '',
+                htmlBody: email.htmlBody || '',
                 date: new Date(email.date),
                 unread: email.unread,
                 priority: email.priority || 'later'
@@ -423,7 +424,25 @@ function showEmail(emailId) {
     document.getElementById('sender-name').textContent = email.from.name;
     document.getElementById('sender-email').textContent = email.from.email;
     document.getElementById('email-date').textContent = formatDate(email.date);
-    document.getElementById('email-body').textContent = email.body;
+    
+    const emailBodyElement = document.getElementById('email-body');
+    if (email.htmlBody) {
+        // Decode HTML entities if the content is escaped
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = email.htmlBody;
+        const decodedHtml = tempDiv.textContent || tempDiv.innerText || email.htmlBody;
+        
+        // Check if it looks like HTML (starts with < or <!DOCTYPE)
+        if (decodedHtml.trim().startsWith('<')) {
+            emailBodyElement.innerHTML = decodedHtml;
+        } else {
+            emailBodyElement.innerHTML = email.htmlBody;
+        }
+        emailBodyElement.style.whiteSpace = 'normal';
+    } else {
+        emailBodyElement.textContent = email.body;
+        emailBodyElement.style.whiteSpace = 'pre-wrap';
+    }
 
     emailList.style.display = 'none';
     emailView.classList.remove('hidden');

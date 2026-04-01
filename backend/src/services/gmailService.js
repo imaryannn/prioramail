@@ -35,13 +35,24 @@ export const gmailService = {
     const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 
     let body = '';
+    let htmlBody = '';
+    
+    const extractBody = (part) => {
+      if (part.mimeType === 'text/plain' && part.body.data) {
+        body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+      }
+      if (part.mimeType === 'text/html' && part.body.data) {
+        htmlBody = Buffer.from(part.body.data, 'base64').toString('utf-8');
+      }
+      if (part.parts) {
+        part.parts.forEach(extractBody);
+      }
+    };
+
     if (emailData.payload.body.data) {
       body = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8');
     } else if (emailData.payload.parts) {
-      const textPart = emailData.payload.parts.find(part => part.mimeType === 'text/plain');
-      if (textPart && textPart.body.data) {
-        body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
-      }
+      emailData.payload.parts.forEach(extractBody);
     }
 
     return {
@@ -51,7 +62,8 @@ export const gmailService = {
       to: getHeader('To'),
       subject: getHeader('Subject'),
       date: new Date(parseInt(emailData.internalDate)),
-      body: body.substring(0, 500),
+      body: body,
+      htmlBody: htmlBody,
       snippet: emailData.snippet,
       unread: emailData.labelIds?.includes('UNREAD') || false,
       labels: emailData.labelIds || [],
