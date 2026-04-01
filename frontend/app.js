@@ -5,8 +5,11 @@ const state = {
     currentView: 'inbox',
     currentPriority: 'focus',
     selectedEmail: null,
-    searchQuery: ''
+    searchQuery: '',
+    token: null
 };
+
+const API_URL = 'http://localhost:3000';
 
 // DOM Elements
 const loginScreen = document.getElementById('login-screen');
@@ -21,8 +24,33 @@ const searchInput = document.getElementById('search-input');
 // Initialize App
 function init() {
     setupEventListeners();
-    // Always start at login screen (remove this to enable persistent login)
-    localStorage.removeItem('user');
+    checkAuthToken();
+}
+
+// Check for auth token in URL or localStorage
+function checkAuthToken() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const error = urlParams.get('error');
+
+    if (error) {
+        alert('Authentication failed. Please try again.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
+
+    if (token) {
+        state.token = token;
+        localStorage.setItem('token', token);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        loadUserProfile();
+    } else {
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            state.token = savedToken;
+            loadUserProfile();
+        }
+    }
 }
 
 // Event Listeners
@@ -80,45 +108,52 @@ function setupEventListeners() {
 
 // Authentication
 async function handleGoogleLogin() {
-    console.log('Login button clicked');
     try {
-        // TODO: Implement actual Google OAuth
-        // For now, simulate login
-        const mockUser = {
-            email: 'user@example.com',
-            name: 'User',
-            avatar: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Ccircle cx="20" cy="20" r="20" fill="%2384A98C"/%3E%3Ctext x="20" y="26" font-size="18" fill="white" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600"%3EU%3C/text%3E%3C/svg%3E'
-        };
-        
-        state.user = mockUser;
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        
-        console.log('Showing main screen');
-        showMainScreen();
-        loadEmails();
+        const response = await fetch(`${API_URL}/auth/google`);
+        const data = await response.json();
+        window.location.href = data.authUrl;
     } catch (error) {
         console.error('Login failed:', error);
         alert('Login failed. Please try again.');
     }
 }
 
+async function loadUserProfile() {
+    try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load profile');
+        }
+
+        const user = await response.json();
+        state.user = user;
+        showMainScreen();
+        loadEmails();
+    } catch (error) {
+        console.error('Failed to load profile:', error);
+        localStorage.removeItem('token');
+        state.token = null;
+    }
+}
+
 function showMainScreen() {
-    console.log('showMainScreen called');
-    console.log('loginScreen:', loginScreen);
-    console.log('mainScreen:', mainScreen);
-    console.log('loginScreen computed display:', window.getComputedStyle(loginScreen).display);
-    console.log('mainScreen computed display BEFORE:', window.getComputedStyle(mainScreen).display);
-    
     loginScreen.classList.remove('active');
     mainScreen.classList.add('active');
     
-    console.log('loginScreen classes:', loginScreen.className);
-    console.log('mainScreen classes:', mainScreen.className);
-    console.log('mainScreen computed display AFTER:', window.getComputedStyle(mainScreen).display);
-    
     // Update user info
-    document.getElementById('user-avatar').src = state.user.avatar;
+    const avatar = state.user.picture || generateAvatar(state.user.name);
+    document.getElementById('user-avatar').src = avatar;
     document.getElementById('user-email').textContent = state.user.email;
+}
+
+function generateAvatar(name) {
+    const initial = name.charAt(0).toUpperCase();
+    return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Ccircle cx="20" cy="20" r="20" fill="%2384A98C"/%3E%3Ctext x="20" y="26" font-size="18" fill="white" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600"%3E${initial}%3C/text%3E%3C/svg%3E`;
 }
 
 // Email Loading
