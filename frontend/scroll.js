@@ -1,17 +1,11 @@
-// Smooth scroll with momentum and section snapping
+// Smooth scroll with fade-in animations
 let scrollCount = 0;
 let lastScrollTime = 0;
 let isSnapping = false;
 let lastDirection = 0;
-let touchStartY = 0;
-let touchStartScrollTop = 0;
-let isTouching = false;
 const SCROLL_THRESHOLD = 2;
 const RESET_TIME = 1500;
 const SNAP_COOLDOWN = 1000;
-const TOUCH_SNAP_COOLDOWN = 600; // Shorter cooldown for touch
-const TOUCH_THRESHOLD = 50; // Minimum swipe distance
-const TOUCH_DURATION = 600; // Faster animation for touch
 
 const scrollLoginScreen = document.getElementById('login-screen');
 
@@ -24,27 +18,31 @@ if (scrollLoginScreen) {
         sections[0].classList.add('active');
     }
     
-    function handleScroll(direction, isTouchEvent = false) {
+    // Observe sections entering viewport for fade-in animation
+    const observerOptions = {
+        root: scrollLoginScreen,
+        threshold: 0.3
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+            }
+        });
+    }, observerOptions);
+    
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+    
+    function handleScroll(direction) {
         if (isSnapping) {
             return;
         }
         
         const currentTime = Date.now();
         
-        // For touch events, skip the count logic and snap immediately
-        if (isTouchEvent) {
-            isSnapping = true;
-            scrollCount = 0;
-            
-            const targetIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
-            
-            console.log('Touch: Snapping from section', currentSectionIndex, 'to', targetIndex);
-            
-            performSnap(targetIndex, true);
-            return;
-        }
-        
-        // For mouse wheel, use the 2-scroll requirement
         // Reset count if too much time has passed or direction changed
         if (currentTime - lastScrollTime > RESET_TIME || direction !== lastDirection) {
             scrollCount = 0;
@@ -65,16 +63,16 @@ if (scrollLoginScreen) {
             
             console.log('Snapping from section', currentSectionIndex, 'to', targetIndex);
             
-            performSnap(targetIndex, false);
+            performSnap(targetIndex);
         }
     }
     
-    function performSnap(targetIndex, isTouchEvent = false) {
+    function performSnap(targetIndex) {
         if (targetIndex !== currentSectionIndex) {
             const prevIndex = currentSectionIndex;
             currentSectionIndex = targetIndex;
             
-            const duration = isTouchEvent ? TOUCH_DURATION : 1000;
+            const duration = 1000;
             
             // Different animations based on section
             const animations = [
@@ -137,14 +135,12 @@ if (scrollLoginScreen) {
             // Animate in target section
             const targetAnim = animations[targetIndex];
             sections[targetIndex].classList.add('active');
-            const fadeInDelay = isTouchEvent ? 100 : 200;
             setTimeout(() => {
                 sections[targetIndex].style.opacity = targetAnim.in.opacity;
                 sections[targetIndex].style.transform = targetAnim.in.transform;
-            }, fadeInDelay);
+            }, 200);
             
             // Reset previous section after transition
-            const resetDelay = isTouchEvent ? 500 : 800;
             setTimeout(() => {
                 sections.forEach((section, index) => {
                     if (index !== targetIndex) {
@@ -153,21 +149,17 @@ if (scrollLoginScreen) {
                         section.classList.remove('active');
                     }
                 });
-            }, resetDelay);
+            }, 800);
         }
         
-        const cooldown = isTouchEvent ? TOUCH_SNAP_COOLDOWN : SNAP_COOLDOWN;
         setTimeout(() => {
             isSnapping = false;
             console.log('Snap complete, ready for next scroll');
-        }, cooldown);
+        }, SNAP_COOLDOWN);
     }
     
     // Mouse wheel events
     scrollLoginScreen.addEventListener('wheel', (e) => {
-        // Don't interfere with touch scrolling
-        if (isTouching) return;
-        
         if (isSnapping) {
             e.preventDefault();
             return;
@@ -177,60 +169,4 @@ if (scrollLoginScreen) {
         const direction = e.deltaY > 0 ? 1 : -1;
         handleScroll(direction);
     }, { passive: false });
-    
-    // Touch events - allow native scrolling
-    scrollLoginScreen.addEventListener('touchstart', (e) => {
-        isTouching = true;
-        touchStartY = e.touches[0].clientY;
-        touchStartScrollTop = scrollLoginScreen.scrollTop;
-    }, { passive: true });
-    
-    scrollLoginScreen.addEventListener('touchmove', (e) => {
-        if (!isTouching) return;
-        
-        const touchY = e.touches[0].clientY;
-        const deltaY = touchStartY - touchY;
-        
-        // Check if we've scrolled enough to trigger a section change
-        if (Math.abs(deltaY) > TOUCH_THRESHOLD) {
-            const direction = deltaY > 0 ? 1 : -1;
-            
-            // Check if we can move to next/prev section
-            const targetIndex = currentSectionIndex + direction;
-            if (targetIndex >= 0 && targetIndex < sections.length && !isSnapping) {
-                // Trigger snap immediately without waiting for touchend
-                isTouching = false;
-                handleScroll(direction, true);
-            }
-        }
-    }, { passive: true });
-    
-    scrollLoginScreen.addEventListener('touchend', (e) => {
-        if (!isTouching) return;
-        
-        setTimeout(() => {
-            isTouching = false;
-        }, 100);
-        
-        if (isSnapping) return;
-        
-        // Find the closest section to current scroll position
-        let closestIndex = 0;
-        let minDistance = Infinity;
-        
-        sections.forEach((section, index) => {
-            const distance = Math.abs(section.offsetTop - scrollLoginScreen.scrollTop);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestIndex = index;
-            }
-        });
-        
-        // Snap to closest section
-        isSnapping = true;
-        
-        console.log('Touch end: Snapping to closest section', closestIndex);
-        
-        performSnap(closestIndex, true);
-    }, { passive: true });
 }
