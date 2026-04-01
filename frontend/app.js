@@ -120,17 +120,21 @@ async function handleGoogleLogin() {
 
 async function loadUserProfile() {
     try {
+        console.log('Loading user profile with token:', state.token);
         const response = await fetch(`${API_URL}/auth/profile`, {
             headers: {
                 'Authorization': `Bearer ${state.token}`
             }
         });
 
+        console.log('Profile response status:', response.status);
+
         if (!response.ok) {
             throw new Error('Failed to load profile');
         }
 
         const user = await response.json();
+        console.log('User loaded:', user);
         state.user = user;
         showMainScreen();
         loadEmails();
@@ -142,13 +146,17 @@ async function loadUserProfile() {
 }
 
 function showMainScreen() {
+    console.log('showMainScreen called');
+    console.log('User:', state.user);
     loginScreen.classList.remove('active');
     mainScreen.classList.add('active');
+    console.log('Screen classes updated');
     
     // Update user info
     const avatar = state.user.picture || generateAvatar(state.user.name);
     document.getElementById('user-avatar').src = avatar;
     document.getElementById('user-email').textContent = state.user.email;
+    console.log('User info updated');
 }
 
 function generateAvatar(name) {
@@ -159,10 +167,41 @@ function generateAvatar(name) {
 // Email Loading
 async function loadEmails() {
     try {
-        // TODO: Fetch from backend API
-        // For now, use mock data
-        state.emails = getMockEmails();
+        console.log('loadEmails called');
+        const response = await fetch(`${API_URL}/emails`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load emails');
+        }
+
+        const data = await response.json();
+        state.emails = data.emails.map(email => {
+            const fromMatch = email.from.match(/(.+?)\s*<(.+)>/);
+            const name = fromMatch ? fromMatch[1].trim().replace(/"/g, '') : email.from;
+            const emailAddr = fromMatch ? fromMatch[2] : email.from;
+            
+            return {
+                id: email.id,
+                from: { 
+                    name: name,
+                    email: emailAddr,
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=84A98C&color=fff&size=128`
+                },
+                subject: email.subject || '(No Subject)',
+                preview: email.snippet || '',
+                body: email.body || email.snippet || '',
+                date: new Date(email.date),
+                unread: email.unread,
+                priority: email.priority || 'later'
+            };
+        });
+        console.log('Emails loaded:', state.emails.length);
         renderEmailList();
+        console.log('Email list rendered');
     } catch (error) {
         console.error('Failed to load emails:', error);
     }
@@ -458,8 +497,18 @@ async function handleSendEmail(e) {
     const body = document.getElementById('compose-body').value;
 
     try {
-        // TODO: Send via backend API
-        console.log('Sending email:', { to, subject, body });
+        const response = await fetch(`${API_URL}/emails/send`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({ to, subject, body })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to send email');
+        }
         
         alert('Email sent successfully!');
         closeComposeModal();

@@ -4,6 +4,7 @@ import session from 'express-session';
 import { config } from './config/config.js';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
+import emailRoutes from './routes/emails.js';
 
 const app = express();
 
@@ -12,7 +13,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: config.frontend.url,
+  origin: ['http://127.0.0.1:3001', 'http://localhost:3001'],
   credentials: true,
 }));
 
@@ -32,6 +33,7 @@ app.use(session({
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/emails', emailRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
