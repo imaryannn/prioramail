@@ -2,20 +2,40 @@ import { googleAuthService } from './googleAuth.js';
 import { aiService } from './aiService.js';
 
 export const gmailService = {
-  async getEmails(user, maxResults = 50) {
+  async getEmails(user, maxResults = 500) {
     const gmail = googleAuthService.getGmailClient(user.accessToken, user.refreshToken);
     
-    const response = await gmail.users.messages.list({
-      userId: 'me',
-      maxResults: maxResults,
-      q: 'in:inbox',
-    });
+    let allMessages = [];
+    let pageToken = null;
+    
+    // Fetch all emails using pagination
+    do {
+      const response = await gmail.users.messages.list({
+        userId: 'me',
+        maxResults: 500,
+        q: 'in:inbox',
+        pageToken: pageToken
+      });
 
-    if (!response.data.messages) {
+      if (response.data.messages) {
+        allMessages = allMessages.concat(response.data.messages);
+      }
+      
+      pageToken = response.data.nextPageToken;
+      
+      // Limit total emails to maxResults
+      if (allMessages.length >= maxResults) {
+        allMessages = allMessages.slice(0, maxResults);
+        break;
+      }
+    } while (pageToken);
+
+    if (allMessages.length === 0) {
       return [];
     }
 
-    const emailPromises = response.data.messages.map(async (message) => {
+    // Fetch full email details in batches
+    const emailPromises = allMessages.map(async (message) => {
       const email = await gmail.users.messages.get({
         userId: 'me',
         id: message.id,

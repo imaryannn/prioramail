@@ -6,7 +6,19 @@ const state = {
     currentPriority: 'focus',
     selectedEmail: null,
     searchQuery: '',
-    token: null
+    token: null,
+    pagination: {
+        currentPage: 1,
+        emailsPerPage: 50,
+        totalEmails: 0,
+        nextPageToken: null,
+        hasMore: true,
+        isLoadingMore: false
+    },
+    loading: {
+        total: 0,
+        loaded: 0
+    }
 };
 
 const API_URL = 'http://localhost:3000';
@@ -20,6 +32,8 @@ const emailView = document.getElementById('email-view');
 const composeModal = document.getElementById('compose-modal');
 const composeForm = document.getElementById('compose-form');
 const searchInput = document.getElementById('search-input');
+const loadingBar = document.getElementById('loading-bar');
+const loadingSpinner = document.getElementById('loading-spinner');
 
 // Initialize App
 function init() {
@@ -103,6 +117,11 @@ function setupEventListeners() {
             emailView.classList.add('hidden');
             emailList.style.display = 'block';
         });
+    }
+    
+    // Infinite scroll
+    if (emailList) {
+        emailList.addEventListener('scroll', handleScroll);
     }
     
     // Logout
@@ -194,10 +213,27 @@ function generateAvatar(name) {
 }
 
 // Email Loading
-async function loadEmails() {
+async function loadEmails(reset = true) {
     try {
-        console.log('loadEmails called');
-        const response = await fetch(`${API_URL}/emails`, {
+        if (reset) {
+            console.log('loadEmails called');
+            loadingBar.classList.remove('hidden');
+            loadingSpinner.classList.remove('hidden');
+            emailList.style.display = 'none';
+            state.emails = [];
+            state.pagination.nextPageToken = null;
+            state.pagination.hasMore = true;
+        }
+        
+        if (state.pagination.isLoadingMore) return;
+        state.pagination.isLoadingMore = true;
+        
+        let url = `${API_URL}/emails?maxResults=100`;
+        if (state.pagination.nextPageToken) {
+            url += `&pageToken=${state.pagination.nextPageToken}`;
+        }
+        
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${state.token}`
             }
@@ -208,12 +244,19 @@ async function loadEmails() {
         }
 
         const data = await response.json();
-        state.emails = data.emails.map(email => {
+        state.pagination.nextPageToken = data.nextPageToken || null;
+        state.pagination.hasMore = !!data.nextPageToken;
+        
+        state.loading.total = data.emails.length;
+        state.loading.loaded = 0;
+        
+        for (let i = 0; i < data.emails.length; i++) {
+            const email = data.emails[i];
             const fromMatch = email.from.match(/(.+?)\s*<(.+)>/);
             const name = fromMatch ? fromMatch[1].trim().replace(/"/g, '') : email.from;
             const emailAddr = fromMatch ? fromMatch[2] : email.from;
             
-            return {
+            state.emails.push({
                 id: email.id,
                 from: { 
                     name: name,
@@ -227,13 +270,40 @@ async function loadEmails() {
                 date: new Date(email.date),
                 unread: email.unread,
                 priority: email.priority || 'later'
-            };
-        });
+            });
+            
+            state.loading.loaded = i + 1;
+            updateLoadingProgress();
+            
+            if (i % 10 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+        }
+        
+        state.pagination.totalEmails = state.emails.length;
+        if (reset) state.pagination.currentPage = 1;
+        
         console.log('Emails loaded:', state.emails.length);
         renderEmailList();
         console.log('Email list rendered');
     } catch (error) {
         console.error('Failed to load emails:', error);
+    } finally {
+        state.pagination.isLoadingMore = false;
+        if (reset) {
+            loadingBar.classList.add('hidden');
+            loadingSpinner.classList.add('hidden');
+            emailList.style.display = 'block';
+        }
+    }
+}
+
+function updateLoadingProgress() {
+    const loadingBarFill = document.querySelector('.loading-bar-fill');
+    if (loadingBarFill && state.loading.total > 0) {
+        const percentage = (state.loading.loaded / state.loading.total) * 100;
+        loadingBarFill.style.width = `${percentage}%`;
+        loadingBarFill.style.animation = 'none';
     }
 }
 
@@ -418,7 +488,13 @@ function renderEmailList() {
         return;
     }
 
-    const emailItems = filteredEmails.map(email => `
+    // Pagination
+    const startIndex = (state.pagination.currentPage - 1) * state.pagination.emailsPerPage;
+    const endIndex = startIndex + state.pagination.emailsPerPage;
+    const paginatedEmails = filteredEmails.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(filteredEmails.length / state.pagination.emailsPerPage);
+
+    const emailItems = paginatedEmails.map(email => `
         <div class="email-item ${email.unread ? 'unread' : ''}" data-id="${email.id}">
             <img src="${email.from.avatar}" alt="${email.from.name}" class="avatar-small">
             <div>
@@ -430,15 +506,68 @@ function renderEmailList() {
         </div>
     `).join('');
     
-    emailList.innerHTML = `<div class="email-list-container">${emailItems}</div>`;
+    const paginationHTML = totalPages > 1 ? `
+        <div class="pagination">
+            <button class="pagination-btn" id="prev-page-btn" ${state.pagination.currentPage === 1 ? 'disabled' : ''}>
+                ← Previous
+            </button>
+            <span class="pagination-info">Page ${state.pagination.currentPage} of ${totalPages}</span>
+            <button class="pagination-btn" id="next-page-btn" ${state.pagination.currentPage === totalPages ? 'disabled' : ''}>
+                Next →
+            </button>
+        </div>
+    ` : '';
+    
+    emailList.innerHTML = `<div class="email-list-container">${emailItems}</div>${paginationHTML}`;
 
-    // Add click listeners
+    // Add click listeners for emails
     document.querySelectorAll('.email-item').forEach(item => {
         item.addEventListener('click', () => {
             const emailId = item.dataset.id;
             showEmail(emailId);
         });
     });
+    
+    // Add click listeners for pagination buttons
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (state.pagination.currentPage > 1) {
+                changePage(state.pagination.currentPage - 1);
+            }
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (state.pagination.currentPage < totalPages) {
+                changePage(state.pagination.currentPage + 1);
+            }
+        });
+    }
+}
+
+function changePage(page) {
+    state.pagination.currentPage = page;
+    renderEmailList();
+    emailList.scrollTop = 0;
+}
+
+function handleScroll() {
+    const container = emailList.querySelector('.email-list-container');
+    if (!container) return;
+    
+    const scrollTop = emailList.scrollTop;
+    const scrollHeight = emailList.scrollHeight;
+    const clientHeight = emailList.clientHeight;
+    
+    if (scrollTop + clientHeight >= scrollHeight - 100 && 
+        state.pagination.hasMore && 
+        !state.pagination.isLoadingMore) {
+        loadEmails(false);
+    }
 }
 
 function showEmail(emailId) {
@@ -511,6 +640,7 @@ function showViewMessage(view) {
 
 function switchPriority(priority) {
     state.currentPriority = priority;
+    state.pagination.currentPage = 1; // Reset to first page
     
     document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.priority === priority);
@@ -524,6 +654,7 @@ function switchPriority(priority) {
 // Search
 function handleSearch(e) {
     state.searchQuery = e.target.value.toLowerCase();
+    state.pagination.currentPage = 1; // Reset to first page
     renderEmailList();
 }
 
