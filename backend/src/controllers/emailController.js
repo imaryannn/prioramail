@@ -7,7 +7,8 @@ export const emailController = {
       const user = req.user;
       const maxResults = req.query.maxResults ? parseInt(req.query.maxResults) : 10;
       const pageToken = req.query.pageToken || null;
-      const result = await gmailService.getEmails(user, maxResults, pageToken);
+      const useAI = req.query.useAI === 'true';
+      const result = await gmailService.getEmails(user, maxResults, pageToken, useAI);
       res.json(result);
     } catch (error) {
       console.error('Failed to fetch emails:', error);
