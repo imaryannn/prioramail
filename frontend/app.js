@@ -596,21 +596,77 @@ function showEmail(emailId) {
     document.getElementById('email-date').textContent = formatDate(email.date);
     
     const emailBodyElement = document.getElementById('email-body');
-    if (email.htmlBody) {
-        // Decode HTML entities if the content is escaped
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = email.htmlBody;
-        const decodedHtml = tempDiv.textContent || tempDiv.innerText || email.htmlBody;
+    
+    // Sanitize and render HTML emails properly
+    if (email.htmlBody && email.htmlBody.trim()) {
+        // Create iframe for safe HTML rendering
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.border = 'none';
+        iframe.style.minHeight = '400px';
         
-        // Check if it looks like HTML (starts with < or <!DOCTYPE)
-        if (decodedHtml.trim().startsWith('<')) {
-            emailBodyElement.innerHTML = decodedHtml;
-        } else {
-            emailBodyElement.innerHTML = email.htmlBody;
-        }
-        emailBodyElement.style.whiteSpace = 'normal';
+        emailBodyElement.innerHTML = '';
+        emailBodyElement.appendChild(iframe);
+        
+        // Write HTML content to iframe
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                        line-height: 1.6;
+                        color: #1F2937;
+                        margin: 0;
+                        padding: 20px;
+                        word-wrap: break-word;
+                    }
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                    }
+                    a {
+                        color: #52796F;
+                        word-break: break-all;
+                    }
+                    table {
+                        max-width: 100%;
+                        border-collapse: collapse;
+                    }
+                </style>
+            </head>
+            <body>
+                ${email.htmlBody}
+            </body>
+            </html>
+        `);
+        iframeDoc.close();
+        
+        // Auto-resize iframe based on content
+        iframe.onload = function() {
+            try {
+                const iframeBody = iframe.contentDocument.body;
+                const iframeHtml = iframe.contentDocument.documentElement;
+                const height = Math.max(
+                    iframeBody.scrollHeight,
+                    iframeBody.offsetHeight,
+                    iframeHtml.clientHeight,
+                    iframeHtml.scrollHeight,
+                    iframeHtml.offsetHeight
+                );
+                iframe.style.height = height + 'px';
+            } catch (e) {
+                iframe.style.height = '600px';
+            }
+        };
     } else {
-        emailBodyElement.textContent = email.body;
+        // Plain text email
+        emailBodyElement.textContent = email.body || email.preview || 'No content';
         emailBodyElement.style.whiteSpace = 'pre-wrap';
     }
 
