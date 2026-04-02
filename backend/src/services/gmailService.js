@@ -3,57 +3,67 @@ import { googleAuthService } from './googleAuth.js';
 // Keyword-based categorization (no AI)
 function keywordBasedCategorization(email) {
   const subject = email.subject?.toLowerCase() || '';
-  const body = email.body?.toLowerCase() || '';
+  const snippet = email.snippet?.toLowerCase() || '';
   const from = email.from?.toLowerCase() || '';
-  const text = `${subject} ${body} ${from}`;
+  const text = `${subject} ${snippet} ${from}`;
 
-  // Focus keywords (urgent/important)
-  const focusKeywords = ['meeting', 'urgent', 'important', 'deadline', 'approval', 'review', 'action required', 'asap', 'critical'];
-  if (focusKeywords.some(keyword => text.includes(keyword))) {
-    return 'focus';
-  }
-
-  // Verification codes
-  const verificationKeywords = ['verification code', 'verify', 'otp', 'one-time password', 'confirm your', 'authentication code', 'security code', '2fa', 'two-factor'];
-  if (verificationKeywords.some(keyword => text.includes(keyword))) {
+  // Verification codes - check first (highest priority for these)
+  if (text.includes('verification') || text.includes('verify') || text.includes('otp') || 
+      text.includes('code') && (text.includes('security') || text.includes('confirm')) ||
+      text.includes('authenticate') || text.includes('2fa') || text.includes('two-factor')) {
     return 'verification';
   }
 
   // Receipts and orders
-  const receiptKeywords = ['receipt', 'invoice', 'order confirmation', 'payment received', 'transaction', 'your order', 'purchase confirmation'];
-  if (receiptKeywords.some(keyword => text.includes(keyword))) {
+  if (text.includes('receipt') || text.includes('invoice') || 
+      text.includes('order') && (text.includes('confirm') || text.includes('ship')) ||
+      text.includes('payment received') || text.includes('transaction') || 
+      text.includes('purchase') || text.includes('paid')) {
     return 'receipts';
   }
 
-  // Newsletters
-  const newsletterKeywords = ['newsletter', 'unsubscribe', 'weekly digest', 'monthly update', 'subscribe'];
-  if (newsletterKeywords.some(keyword => text.includes(keyword))) {
-    return 'newsletters';
-  }
-
-  // Promotions and marketing
-  const promotionKeywords = ['discount', 'offer', 'sale', 'deal', 'promo', 'coupon', '% off', 'limited time', 'special offer'];
-  if (promotionKeywords.some(keyword => text.includes(keyword))) {
-    return 'promotions';
-  }
-
-  // Social media
-  const socialKeywords = ['linkedin', 'facebook', 'twitter', 'instagram', 'connection request', 'friend request', 'mentioned you', 'tagged you'];
-  const socialDomains = ['linkedin.com', 'facebook.com', 'twitter.com', 'instagram.com'];
-  if (socialKeywords.some(keyword => text.includes(keyword)) || socialDomains.some(domain => from.includes(domain))) {
+  // Social media - check domains and keywords
+  if (from.includes('linkedin') || from.includes('facebook') || from.includes('twitter') || 
+      from.includes('instagram') || from.includes('facebookmail') || from.includes('x.com') ||
+      text.includes('connection request') || text.includes('friend request') || 
+      text.includes('mentioned you') || text.includes('tagged you')) {
     return 'social';
   }
 
+  // Promotions and marketing
+  if (text.includes('discount') || text.includes('offer') || text.includes('sale') || 
+      text.includes('deal') || text.includes('promo') || text.includes('coupon') || 
+      text.includes('% off') || text.includes('percent off') || text.includes('save') && text.includes('$') ||
+      text.includes('limited time') || text.includes('special offer')) {
+    return 'promotions';
+  }
+
+  // Newsletters
+  if (text.includes('newsletter') || text.includes('unsubscribe') || 
+      text.includes('weekly digest') || text.includes('monthly update') || 
+      text.includes('subscribe') || text.includes('mailing list')) {
+    return 'newsletters';
+  }
+
   // Updates and notifications
-  const updateKeywords = ['notification', 'update', 'new comment', 'new message', 'activity', 'reminder'];
-  if (updateKeywords.some(keyword => text.includes(keyword))) {
+  if (text.includes('notification') || text.includes('new comment') || 
+      text.includes('new message') || text.includes('activity') || 
+      text.includes('reminder') || text.includes('alert')) {
     return 'updates';
   }
 
   // Spam indicators
-  const spamKeywords = ['congratulations you won', 'claim your prize', 'click here now', 'act now', 'limited time offer', 'free money'];
-  if (spamKeywords.some(keyword => text.includes(keyword))) {
+  if (text.includes('congratulations you won') || text.includes('claim your prize') || 
+      text.includes('click here now') || text.includes('act now') || 
+      text.includes('free money') || text.includes('you have won')) {
     return 'spam';
+  }
+
+  // Focus keywords (urgent/important) - check last to avoid false positives
+  if (text.includes('meeting') || text.includes('urgent') || text.includes('important') || 
+      text.includes('deadline') || text.includes('approval') || text.includes('review') || 
+      text.includes('action required') || text.includes('asap') || text.includes('critical')) {
+    return 'focus';
   }
 
   // Default to later

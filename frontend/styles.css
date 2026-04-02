@@ -1588,16 +1588,8 @@ body {
     color: #F59E0B;
 }
 
-.tab[data-priority="other"] svg {
-    color: #9CA3AF;
-}
-
 .tab[data-priority="focus"] svg {
     color: #EF4444;
-}
-
-.tab[data-priority="important"] svg {
-    color: #F59E0B;
 }
 
 .tab[data-priority="verification"] svg {
@@ -1622,10 +1614,6 @@ body {
 
 .tab[data-priority="updates"] svg {
     color: #6366F1;
-}
-
-.tab[data-priority="reminders"] svg {
-    color: #F97316;
 }
 
 .tab[data-priority="spam"] svg {
