@@ -5,9 +5,10 @@ export const emailController = {
   async getEmails(req, res) {
     try {
       const user = req.user;
-      const maxResults = req.query.maxResults ? parseInt(req.query.maxResults) : 500;
-      const emails = await gmailService.getEmails(user, maxResults);
-      res.json({ emails });
+      const maxResults = req.query.maxResults ? parseInt(req.query.maxResults) : 10;
+      const pageToken = req.query.pageToken || null;
+      const result = await gmailService.getEmails(user, maxResults, pageToken);
+      res.json(result);
     } catch (error) {
       console.error('Failed to fetch emails:', error);
       res.status(500).json({ error: 'Failed to fetch emails' });

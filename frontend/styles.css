@@ -1327,9 +1327,47 @@ body {
     max-width: 720px;
     width: 100%;
     margin: 0 auto;
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.5rem 0.5rem;
     background: var(--white);
     border-bottom: 1px solid var(--border);
+}
+
+/* AI Categorize Button */
+.ai-categorize-container {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 1.5rem 1rem;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+}
+
+.btn-ai-categorize {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 32px;
+    background: var(--accent);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(82, 121, 111, 0.3);
+}
+
+.btn-ai-categorize:hover {
+    background: var(--highlight);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(82, 121, 111, 0.4);
+}
+
+.btn-ai-categorize:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .search-container > div {
@@ -1481,10 +1519,12 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    position: relative;
 }
 
 /* Priority Tabs */
-.priority-tabs {
+.priority-tabs,
+.ai-priority-tabs {
     display: flex;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
@@ -1492,6 +1532,8 @@ body {
     border-bottom: none;
     min-height: auto;
     justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: wrap;
 }
 
 .tab {
@@ -1542,15 +1584,51 @@ body {
     color: var(--white);
 }
 
-.tab[data-priority="focus"] svg {
-    color: #EF4444;
-}
-
 .tab[data-priority="later"] svg {
     color: #F59E0B;
 }
 
-.tab[data-priority="ignore"] svg {
+.tab[data-priority="other"] svg {
+    color: #9CA3AF;
+}
+
+.tab[data-priority="focus"] svg {
+    color: #EF4444;
+}
+
+.tab[data-priority="important"] svg {
+    color: #F59E0B;
+}
+
+.tab[data-priority="verification"] svg {
+    color: #3B82F6;
+}
+
+.tab[data-priority="receipts"] svg {
+    color: #10B981;
+}
+
+.tab[data-priority="newsletters"] svg {
+    color: #8B5CF6;
+}
+
+.tab[data-priority="promotions"] svg {
+    color: #EC4899;
+}
+
+.tab[data-priority="social"] svg {
+    color: #06B6D4;
+}
+
+.tab[data-priority="updates"] svg {
+    color: #6366F1;
+}
+
+.tab[data-priority="reminders"] svg {
+    color: #F97316;
+}
+
+.tab[data-priority="spam"] svg {
     color: #9CA3AF;
 }
 
@@ -2063,6 +2141,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 1.5rem;
     z-index: 100;
     width: 100%;
@@ -2115,6 +2194,10 @@ body {
     font-size: 0.9375rem;
     color: var(--text-light);
     font-weight: 500;
+}
+
+.loading-text {
+    transition: opacity 0.3s ease;
 }
 
 .hidden {

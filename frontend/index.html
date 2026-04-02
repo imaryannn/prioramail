@@ -458,6 +458,13 @@
                     </div>
                 </div>
                 
+                <!-- AI Categorize Button -->
+                <div class="ai-categorize-container">
+                    <button id="ai-categorize-btn" class="btn-ai-categorize">
+                        ✨ Categorize with AI
+                    </button>
+                </div>
+                
                 <!-- Priority Tabs -->
                 <div class="priority-tabs">
                     <button class="tab active" data-priority="focus">
@@ -472,11 +479,75 @@
                         </svg>
                         Later
                     </button>
-                    <button class="tab" data-priority="ignore">
+                    <button class="tab" data-priority="other">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="12" r="10"/>
                         </svg>
                         Other
+                    </button>
+                </div>
+                
+                <!-- AI Priority Tabs (Hidden by default) -->
+                <div class="ai-priority-tabs" style="display: none;">
+                    <button class="tab active" data-priority="focus">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Focus
+                    </button>
+                    <button class="tab" data-priority="important">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Important
+                    </button>
+                    <button class="tab" data-priority="verification">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Verification
+                    </button>
+                    <button class="tab" data-priority="receipts">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Receipts
+                    </button>
+                    <button class="tab" data-priority="newsletters">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Newsletters
+                    </button>
+                    <button class="tab" data-priority="promotions">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Promotions
+                    </button>
+                    <button class="tab" data-priority="social">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Social
+                    </button>
+                    <button class="tab" data-priority="updates">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Updates
+                    </button>
+                    <button class="tab" data-priority="reminders">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Reminders
+                    </button>
+                    <button class="tab" data-priority="spam">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        Spam
                     </button>
                 </div>
 
@@ -487,10 +558,7 @@
                 
                 <!-- Loading Spinner -->
                 <div id="loading-spinner" class="loading-spinner hidden">
-                    <div class="loading-bar-container">
-                        <div class="loading-bar-fill"></div>
-                    </div>
-                    <p>Loading your emails...</p>
+                    <p class="loading-text">Hang on tight...</p>
                 </div>
 
                 <!-- Email View -->

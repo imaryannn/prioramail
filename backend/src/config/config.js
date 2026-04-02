@@ -28,4 +28,11 @@ export const config = {
   session: {
     secret: process.env.SESSION_SECRET || 'default-session-secret-change-in-production',
   },
+  
+  gemini: {
+    apiKeys: [
+      process.env.GEMINI_API_KEY_1,
+      process.env.GEMINI_API_KEY_2
+    ].filter(Boolean),
+  },
 };

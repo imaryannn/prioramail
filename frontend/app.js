@@ -7,6 +7,7 @@ const state = {
     selectedEmail: null,
     searchQuery: '',
     token: null,
+    aiCategorized: false,
     pagination: {
         currentPage: 1,
         emailsPerPage: 50,
@@ -17,9 +18,19 @@ const state = {
     },
     loading: {
         total: 0,
-        loaded: 0
+        loaded: 0,
+        messageIndex: 0,
+        intervalId: null
     }
 };
+
+const loadingMessages = [
+    "Hang on tight...",
+    "Fetching your emails...",
+    "Almost there...",
+    "Getting things ready...",
+    "Just a moment..."
+];
 
 const API_URL = 'http://localhost:3000';
 
@@ -94,13 +105,19 @@ function setupEventListeners() {
         });
     });
 
-    // Priority Tabs
-    document.querySelectorAll('.tab').forEach(tab => {
+    // Priority Tabs (both regular and AI)
+    document.querySelectorAll('.priority-tabs .tab, .ai-priority-tabs .tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
             const priority = e.currentTarget.dataset.priority;
             switchPriority(priority);
         });
     });
+    
+    // AI Categorize Button
+    const aiCategorizeBtn = document.getElementById('ai-categorize-btn');
+    if (aiCategorizeBtn) {
+        aiCategorizeBtn.addEventListener('click', handleAICategorize);
+    }
 
     // Compose
     const composeBtn = document.querySelector('.btn-compose');
@@ -212,6 +229,54 @@ function generateAvatar(name) {
     return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Ccircle cx="20" cy="20" r="20" fill="%2384A98C"/%3E%3Ctext x="20" y="26" font-size="18" fill="white" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600"%3E${initial}%3C/text%3E%3C/svg%3E`;
 }
 
+// AI Categorization
+async function handleAICategorize() {
+    try {
+        const aiCategorizeBtn = document.getElementById('ai-categorize-btn');
+        const priorityTabs = document.querySelector('.priority-tabs');
+        const aiPriorityTabs = document.querySelector('.ai-priority-tabs');
+        
+        aiCategorizeBtn.disabled = true;
+        aiCategorizeBtn.textContent = 'Categorizing with AI...';
+        
+        // Re-fetch emails with AI categorization
+        state.emails = [];
+        state.pagination.nextPageToken = null;
+        state.pagination.hasMore = true;
+        
+        await loadEmails(true);
+        
+        state.aiCategorized = true;
+        aiCategorizeBtn.disabled = false;
+        aiCategorizeBtn.textContent = '🔄 Recategorize with AI';
+        
+        // Switch from basic tabs to AI tabs
+        priorityTabs.style.display = 'none';
+        aiPriorityTabs.style.display = 'flex';
+        
+        // Switch to first category with emails
+        const categories = ['focus', 'important', 'verification', 'receipts', 'newsletters', 'promotions', 'social', 'updates', 'reminders', 'spam'];
+        for (const cat of categories) {
+            const hasEmails = state.emails.some(e => e.priority === cat);
+            if (hasEmails) {
+                state.currentPriority = cat;
+                document.querySelectorAll('.ai-priority-tabs .tab').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.priority === cat);
+                });
+                break;
+            }
+        }
+        
+        renderEmailList();
+    } catch (error) {
+        console.error('AI categorization failed:', error);
+        alert('Failed to categorize emails with AI. Please try again.');
+        const aiCategorizeBtn = document.getElementById('ai-categorize-btn');
+        aiCategorizeBtn.disabled = false;
+        aiCategorizeBtn.textContent = '✨ Categorize with AI';
+    }
+}
+
 // Email Loading
 async function loadEmails(reset = true) {
     try {
@@ -223,12 +288,17 @@ async function loadEmails(reset = true) {
             state.emails = [];
             state.pagination.nextPageToken = null;
             state.pagination.hasMore = true;
+            
+            // Start loading message rotation
+            state.loading.messageIndex = 0;
+            updateLoadingMessage();
+            state.loading.intervalId = setInterval(updateLoadingMessage, 2000);
         }
         
-        if (state.pagination.isLoadingMore) return;
+        if (state.pagination.isLoadingMore || !state.pagination.hasMore) return;
         state.pagination.isLoadingMore = true;
         
-        let url = `${API_URL}/emails?maxResults=100`;
+        let url = `${API_URL}/emails?maxResults=10`;
         if (state.pagination.nextPageToken) {
             url += `&pageToken=${state.pagination.nextPageToken}`;
         }
@@ -274,10 +344,6 @@ async function loadEmails(reset = true) {
             
             state.loading.loaded = i + 1;
             updateLoadingProgress();
-            
-            if (i % 10 === 0) {
-                await new Promise(resolve => setTimeout(resolve, 10));
-            }
         }
         
         state.pagination.totalEmails = state.emails.length;
@@ -291,6 +357,11 @@ async function loadEmails(reset = true) {
     } finally {
         state.pagination.isLoadingMore = false;
         if (reset) {
+            // Stop loading message rotation
+            if (state.loading.intervalId) {
+                clearInterval(state.loading.intervalId);
+                state.loading.intervalId = null;
+            }
             loadingBar.classList.add('hidden');
             loadingSpinner.classList.add('hidden');
             emailList.style.display = 'block';
@@ -298,12 +369,23 @@ async function loadEmails(reset = true) {
     }
 }
 
+function updateLoadingMessage() {
+    const loadingText = document.querySelector('.loading-text');
+    if (loadingText) {
+        loadingText.style.opacity = '0';
+        setTimeout(() => {
+            state.loading.messageIndex = (state.loading.messageIndex + 1) % loadingMessages.length;
+            loadingText.textContent = loadingMessages[state.loading.messageIndex];
+            loadingText.style.opacity = '1';
+        }, 300);
+    }
+}
+
 function updateLoadingProgress() {
-    const loadingBarFill = document.querySelector('.loading-bar-fill');
+    const loadingBarFill = document.querySelector('.loading-progress');
     if (loadingBarFill && state.loading.total > 0) {
         const percentage = (state.loading.loaded / state.loading.total) * 100;
         loadingBarFill.style.width = `${percentage}%`;
-        loadingBarFill.style.animation = 'none';
     }
 }
 
@@ -466,7 +548,10 @@ function getMockEmails() {
 
 // Rendering
 function renderEmailList() {
-    let filteredEmails = state.emails.filter(email => 
+    let filteredEmails = state.emails;
+    
+    // Filter by priority
+    filteredEmails = filteredEmails.filter(email => 
         email.priority === state.currentPriority
     );
 
@@ -488,13 +573,7 @@ function renderEmailList() {
         return;
     }
 
-    // Pagination
-    const startIndex = (state.pagination.currentPage - 1) * state.pagination.emailsPerPage;
-    const endIndex = startIndex + state.pagination.emailsPerPage;
-    const paginatedEmails = filteredEmails.slice(startIndex, endIndex);
-    const totalPages = Math.ceil(filteredEmails.length / state.pagination.emailsPerPage);
-
-    const emailItems = paginatedEmails.map(email => `
+    const emailItems = filteredEmails.map(email => `
         <div class="email-item ${email.unread ? 'unread' : ''}" data-id="${email.id}">
             <img src="${email.from.avatar}" alt="${email.from.name}" class="avatar-small">
             <div>
@@ -506,19 +585,7 @@ function renderEmailList() {
         </div>
     `).join('');
     
-    const paginationHTML = totalPages > 1 ? `
-        <div class="pagination">
-            <button class="pagination-btn" id="prev-page-btn" ${state.pagination.currentPage === 1 ? 'disabled' : ''}>
-                ← Previous
-            </button>
-            <span class="pagination-info">Page ${state.pagination.currentPage} of ${totalPages}</span>
-            <button class="pagination-btn" id="next-page-btn" ${state.pagination.currentPage === totalPages ? 'disabled' : ''}>
-                Next →
-            </button>
-        </div>
-    ` : '';
-    
-    emailList.innerHTML = `<div class="email-list-container">${emailItems}</div>${paginationHTML}`;
+    emailList.innerHTML = `<div class="email-list-container">${emailItems}</div>`;
 
     // Add click listeners for emails
     document.querySelectorAll('.email-item').forEach(item => {
@@ -527,32 +594,6 @@ function renderEmailList() {
             showEmail(emailId);
         });
     });
-    
-    // Add click listeners for pagination buttons
-    const prevBtn = document.getElementById('prev-page-btn');
-    const nextBtn = document.getElementById('next-page-btn');
-    
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            if (state.pagination.currentPage > 1) {
-                changePage(state.pagination.currentPage - 1);
-            }
-        });
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            if (state.pagination.currentPage < totalPages) {
-                changePage(state.pagination.currentPage + 1);
-            }
-        });
-    }
-}
-
-function changePage(page) {
-    state.pagination.currentPage = page;
-    renderEmailList();
-    emailList.scrollTop = 0;
 }
 
 function handleScroll() {
@@ -616,13 +657,25 @@ function switchView(view) {
         item.classList.toggle('active', item.dataset.view === view);
     });
 
-    // Show/hide priority tabs based on view
+    // Show/hide tabs and button based on view
     const priorityTabs = document.querySelector('.priority-tabs');
+    const aiPriorityTabs = document.querySelector('.ai-priority-tabs');
+    const aiCategorizeBtn = document.getElementById('ai-categorize-btn');
+    
     if (view === 'inbox') {
-        priorityTabs.style.display = 'flex';
+        if (state.aiCategorized) {
+            priorityTabs.style.display = 'none';
+            aiPriorityTabs.style.display = 'flex';
+        } else {
+            priorityTabs.style.display = 'flex';
+            aiPriorityTabs.style.display = 'none';
+        }
+        aiCategorizeBtn.style.display = 'inline-flex';
         loadEmails();
     } else {
         priorityTabs.style.display = 'none';
+        aiPriorityTabs.style.display = 'none';
+        aiCategorizeBtn.style.display = 'none';
         showViewMessage(view);
     }
 }
@@ -640,9 +693,9 @@ function showViewMessage(view) {
 
 function switchPriority(priority) {
     state.currentPriority = priority;
-    state.pagination.currentPage = 1; // Reset to first page
     
-    document.querySelectorAll('.tab').forEach(tab => {
+    const activeTabContainer = state.aiCategorized ? '.ai-priority-tabs' : '.priority-tabs';
+    document.querySelectorAll(`${activeTabContainer} .tab`).forEach(tab => {
         tab.classList.toggle('active', tab.dataset.priority === priority);
     });
 
@@ -654,7 +707,6 @@ function switchPriority(priority) {
 // Search
 function handleSearch(e) {
     state.searchQuery = e.target.value.toLowerCase();
-    state.pagination.currentPage = 1; // Reset to first page
     renderEmailList();
 }
 

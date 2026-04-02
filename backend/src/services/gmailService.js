@@ -2,40 +2,22 @@ import { googleAuthService } from './googleAuth.js';
 import { aiService } from './aiService.js';
 
 export const gmailService = {
-  async getEmails(user, maxResults = 500) {
+  async getEmails(user, maxResults = 10, pageToken = null) {
     const gmail = googleAuthService.getGmailClient(user.accessToken, user.refreshToken);
     
-    let allMessages = [];
-    let pageToken = null;
-    
-    // Fetch all emails using pagination
-    do {
-      const response = await gmail.users.messages.list({
-        userId: 'me',
-        maxResults: 500,
-        q: 'in:inbox',
-        pageToken: pageToken
-      });
+    const response = await gmail.users.messages.list({
+      userId: 'me',
+      maxResults: maxResults,
+      q: 'in:inbox',
+      pageToken: pageToken
+    });
 
-      if (response.data.messages) {
-        allMessages = allMessages.concat(response.data.messages);
-      }
-      
-      pageToken = response.data.nextPageToken;
-      
-      // Limit total emails to maxResults
-      if (allMessages.length >= maxResults) {
-        allMessages = allMessages.slice(0, maxResults);
-        break;
-      }
-    } while (pageToken);
-
-    if (allMessages.length === 0) {
-      return [];
+    if (!response.data.messages || response.data.messages.length === 0) {
+      return { emails: [], nextPageToken: null };
     }
 
-    // Fetch full email details in batches
-    const emailPromises = allMessages.map(async (message) => {
+    // Fetch full email details
+    const emailPromises = response.data.messages.map(async (message) => {
       const email = await gmail.users.messages.get({
         userId: 'me',
         id: message.id,
@@ -43,11 +25,16 @@ export const gmailService = {
       });
 
       const parsed = this.parseEmail(email.data);
-      parsed.priority = aiService.categorizeEmail(parsed);
+      parsed.priority = await aiService.categorizeEmail(parsed);
       return parsed;
     });
 
-    return await Promise.all(emailPromises);
+    const emails = await Promise.all(emailPromises);
+    
+    return {
+      emails,
+      nextPageToken: response.data.nextPageToken || null
+    };
   },
 
   parseEmail(emailData) {
