@@ -104,6 +104,12 @@ function setupEventListeners() {
             emailList.style.display = 'block';
         });
     }
+    
+    // Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
 }
 
 // Authentication
@@ -142,6 +148,29 @@ async function loadUserProfile() {
         console.error('Failed to load profile:', error);
         localStorage.removeItem('token');
         state.token = null;
+    }
+}
+
+async function handleLogout() {
+    try {
+        await fetch(`${API_URL}/auth/logout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    } finally {
+        // Clear local state
+        localStorage.removeItem('token');
+        state.token = null;
+        state.user = null;
+        state.emails = [];
+        
+        // Show login screen
+        mainScreen.classList.remove('active');
+        loginScreen.classList.add('active');
     }
 }
 
