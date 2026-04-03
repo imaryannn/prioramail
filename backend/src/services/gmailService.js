@@ -9,8 +9,13 @@ function keywordBasedCategorization(email) {
 
   // Verification codes - check first (highest priority for these)
   if (text.includes('verification') || text.includes('verify') || text.includes('otp') || 
-      text.includes('code') && (text.includes('security') || text.includes('confirm')) ||
-      text.includes('authenticate') || text.includes('2fa') || text.includes('two-factor')) {
+      text.includes('code') || text.includes('passcode') ||
+      text.includes('authenticate') || text.includes('2fa') || text.includes('two-factor') ||
+      text.includes('security code') || text.includes('login code') || 
+      text.includes('sign in code') || text.includes('signin code') ||
+      text.includes('confirm your') && (text.includes('email') || text.includes('account')) ||
+      text.includes('one-time') || text.includes('temporary code') ||
+      /\b\d{4,8}\b/.test(text) && (text.includes('your') || text.includes('code'))) {
     return 'verification';
   }
 

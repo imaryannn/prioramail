@@ -610,6 +610,11 @@ function showEmail(emailId) {
     
     // Sanitize and render HTML emails properly
     if (email.htmlBody && email.htmlBody.trim()) {
+        // Decode HTML entities first
+        console.log('Original HTML (first 200 chars):', email.htmlBody.substring(0, 200));
+        let decodedHtml = decodeHtmlEntities(email.htmlBody);
+        console.log('Decoded HTML (first 200 chars):', decodedHtml.substring(0, 200));
+        
         // Create iframe for safe HTML rendering
         const iframe = document.createElement('iframe');
         iframe.style.width = '100%';
@@ -652,7 +657,7 @@ function showEmail(emailId) {
                 </style>
             </head>
             <body>
-                ${email.htmlBody}
+                ${decodedHtml}
             </body>
             </html>
         `);
@@ -783,6 +788,23 @@ async function handleSendEmail(e) {
 }
 
 // Utilities
+function decodeHtmlEntities(text) {
+    if (!text) return text;
+    
+    // Create a temporary element to decode HTML entities
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    let decoded = textarea.value;
+    
+    // Sometimes entities are double-encoded, decode again if needed
+    if (decoded.includes('&lt;') || decoded.includes('&gt;') || decoded.includes('&quot;')) {
+        textarea.innerHTML = decoded;
+        decoded = textarea.value;
+    }
+    
+    return decoded;
+}
+
 function formatDate(date) {
     const now = new Date();
     const diff = now - date;
