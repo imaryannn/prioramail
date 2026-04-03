@@ -80,6 +80,28 @@ function checkAuthToken() {
 
 // Event Listeners
 function setupEventListeners() {
+    // Mobile menu
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+            mobileOverlay.classList.toggle('active');
+            mobileMenuBtn.classList.toggle('active');
+        });
+    }
+    
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-open');
+            mobileOverlay.classList.remove('active');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+        });
+    }
+    
     // Login
     if (googleLoginBtn) {
         googleLoginBtn.addEventListener('click', handleGoogleLogin);
@@ -102,6 +124,16 @@ function setupEventListeners() {
             e.preventDefault();
             const view = e.currentTarget.dataset.view;
             switchView(view);
+            
+            // Close mobile menu after navigation
+            const sidebar = document.querySelector('.sidebar');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            if (sidebar && mobileOverlay) {
+                sidebar.classList.remove('mobile-open');
+                mobileOverlay.classList.remove('active');
+                if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+            }
         });
     });
 
@@ -109,9 +141,38 @@ function setupEventListeners() {
     document.querySelectorAll('.priority-tabs .tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
             const priority = e.currentTarget.dataset.priority;
-            switchPriority(priority);
+            if (priority) {
+                switchPriority(priority);
+            }
         });
     });
+    
+    // More tabs button
+    const moreTabsBtn = document.getElementById('more-tabs-btn');
+    const moreTabsDropdown = document.getElementById('more-tabs-dropdown');
+    
+    if (moreTabsBtn && moreTabsDropdown) {
+        moreTabsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moreTabsDropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!moreTabsDropdown.contains(e.target) && e.target !== moreTabsBtn) {
+                moreTabsDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Dropdown tab clicks
+        document.querySelectorAll('.dropdown-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const priority = e.currentTarget.dataset.priority;
+                switchPriority(priority);
+                moreTabsDropdown.classList.add('hidden');
+            });
+        });
+    }
 
     // Compose
     const composeBtn = document.querySelector('.btn-compose');
@@ -732,6 +793,19 @@ function switchPriority(priority) {
     const activeTabContainer = '.priority-tabs';
     document.querySelectorAll(`${activeTabContainer} .tab`).forEach(tab => {
         tab.classList.toggle('active', tab.dataset.priority === priority);
+    });
+    
+    // Update dropdown tabs active state
+    document.querySelectorAll('.dropdown-tab').forEach(tab => {
+        if (tab.dataset.priority === priority) {
+            tab.style.background = 'var(--gray-light)';
+            tab.style.color = 'var(--accent)';
+            tab.style.fontWeight = '600';
+        } else {
+            tab.style.background = 'transparent';
+            tab.style.color = 'var(--text-light)';
+            tab.style.fontWeight = '500';
+        }
     });
 
     emailView.classList.add('hidden');

@@ -391,6 +391,15 @@
 
         <!-- Main App -->
         <div id="main-screen" class="screen">
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" class="mobile-menu-btn">
+                <span class="line-short"></span>
+                <span class="line-long"></span>
+            </button>
+            
+            <!-- Mobile Overlay -->
+            <div id="mobile-overlay" class="mobile-overlay"></div>
+            
             <!-- Sidebar -->
             <aside class="sidebar">
                 <h2 class="logo-small"><span class="logo-priora">Priora</span><span class="logo-mail">mail</span></h2>
@@ -459,73 +468,134 @@
                 </div>
                 
                 <!-- Priority Tabs -->
-                <div class="priority-tabs">
-                    <button class="tab" data-priority="all">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        All Mail
-                    </button>
-                    <button class="tab active" data-priority="latest">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Latest
-                    </button>
-                    <button class="tab" data-priority="focus">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Focus
-                    </button>
-                    <button class="tab" data-priority="later">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Later
-                    </button>
-                    <button class="tab" data-priority="verification">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Verification
-                    </button>
-                    <button class="tab" data-priority="receipts">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Receipts
-                    </button>
-                    <button class="tab" data-priority="newsletters">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Newsletters
-                    </button>
-                    <button class="tab" data-priority="promotions">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Promotions
-                    </button>
-                    <button class="tab" data-priority="social">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Social
-                    </button>
-                    <button class="tab" data-priority="updates">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Updates
-                    </button>
-                    <button class="tab" data-priority="spam">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
-                        Spam
-                    </button>
+                <div class="priority-tabs-wrapper">
+                    <div class="priority-tabs">
+                        <button class="tab" data-priority="all">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            All Mail
+                        </button>
+                        <button class="tab active" data-priority="latest">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Latest
+                        </button>
+                        <button class="tab" data-priority="focus">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Focus
+                        </button>
+                        <button class="tab tab-more" id="more-tabs-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="5" cy="12" r="2"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <circle cx="19" cy="12" r="2"/>
+                            </svg>
+                        </button>
+                        <button class="tab tab-hidden" data-priority="later">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Later
+                        </button>
+                        <button class="tab tab-hidden" data-priority="verification">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Verification
+                        </button>
+                        <button class="tab tab-hidden" data-priority="receipts">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Receipts
+                        </button>
+                        <button class="tab tab-hidden" data-priority="newsletters">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Newsletters
+                        </button>
+                        <button class="tab tab-hidden" data-priority="promotions">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Promotions
+                        </button>
+                        <button class="tab tab-hidden" data-priority="social">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Social
+                        </button>
+                        <button class="tab tab-hidden" data-priority="updates">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Updates
+                        </button>
+                        <button class="tab tab-hidden" data-priority="spam">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Spam
+                        </button>
+                    </div>
+                    
+                    <!-- More Tabs Dropdown -->
+                    <div id="more-tabs-dropdown" class="more-tabs-dropdown hidden">
+                        <button class="dropdown-tab" data-priority="later">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Later
+                        </button>
+                        <button class="dropdown-tab" data-priority="verification">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Verification
+                        </button>
+                        <button class="dropdown-tab" data-priority="receipts">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Receipts
+                        </button>
+                        <button class="dropdown-tab" data-priority="newsletters">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Newsletters
+                        </button>
+                        <button class="dropdown-tab" data-priority="promotions">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Promotions
+                        </button>
+                        <button class="dropdown-tab" data-priority="social">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Social
+                        </button>
+                        <button class="dropdown-tab" data-priority="updates">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Updates
+                        </button>
+                        <button class="dropdown-tab" data-priority="spam">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            Spam
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Email List -->
