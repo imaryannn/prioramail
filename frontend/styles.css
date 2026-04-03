@@ -1584,6 +1584,14 @@ body {
     color: var(--white);
 }
 
+.tab[data-priority="all"] svg {
+    color: #6B7280;
+}
+
+.tab[data-priority="latest"] svg {
+    color: #10B981;
+}
+
 .tab[data-priority="later"] svg {
     color: #F59E0B;
 }

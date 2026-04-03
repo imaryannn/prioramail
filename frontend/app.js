@@ -3,7 +3,7 @@ const state = {
     user: null,
     emails: [],
     currentView: 'inbox',
-    currentPriority: 'later',
+    currentPriority: 'latest',
     selectedEmail: null,
     searchQuery: '',
     token: null,
@@ -510,18 +510,29 @@ function renderEmailList() {
     let filteredEmails = state.emails;
     
     // Filter by priority
-    filteredEmails = filteredEmails.filter(email => 
-        email.priority === state.currentPriority
-    );
+    if (state.currentPriority === 'all') {
+        // Show all emails
+        filteredEmails = state.emails;
+    } else if (state.currentPriority === 'latest') {
+        // Show latest 50 emails sorted by date
+        filteredEmails = [...state.emails].sort((a, b) => b.date - a.date).slice(0, 50);
+    } else {
+        // Filter by specific priority
+        filteredEmails = filteredEmails.filter(email => 
+            email.priority === state.currentPriority
+        );
+    }
     
     console.log('Filtered emails count:', filteredEmails.length);
     
-    // Log priority distribution
-    const priorityCounts = {};
-    state.emails.forEach(email => {
-        priorityCounts[email.priority] = (priorityCounts[email.priority] || 0) + 1;
-    });
-    console.log('Priority distribution:', priorityCounts);
+    // Log priority distribution (only if not showing all or latest)
+    if (state.currentPriority !== 'all' && state.currentPriority !== 'latest') {
+        const priorityCounts = {};
+        state.emails.forEach(email => {
+            priorityCounts[email.priority] = (priorityCounts[email.priority] || 0) + 1;
+        });
+        console.log('Priority distribution:', priorityCounts);
+    }
 
     // Apply search filter
     if (state.searchQuery) {
