@@ -710,6 +710,8 @@ body {
     
     .tab-more {
         display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
     }
     
     .more-tabs-dropdown {
@@ -1805,6 +1807,12 @@ body {
 
 .tab-more {
     display: none;
+}
+
+@media (min-width: 969px) {
+    .tab-more {
+        display: none !important;
+    }
 }
 
 .more-tabs-dropdown {
