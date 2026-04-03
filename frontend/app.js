@@ -610,10 +610,7 @@ function showEmail(emailId) {
     
     // Sanitize and render HTML emails properly
     if (email.htmlBody && email.htmlBody.trim()) {
-        // Decode HTML entities first
-        console.log('Original HTML (first 200 chars):', email.htmlBody.substring(0, 200));
-        let decodedHtml = decodeHtmlEntities(email.htmlBody);
-        console.log('Decoded HTML (first 200 chars):', decodedHtml.substring(0, 200));
+        console.log('HTML Body (first 200 chars):', email.htmlBody.substring(0, 200));
         
         // Create iframe for safe HTML rendering
         const iframe = document.createElement('iframe');
@@ -657,7 +654,7 @@ function showEmail(emailId) {
                 </style>
             </head>
             <body>
-                ${decodedHtml}
+                ${email.htmlBody}
             </body>
             </html>
         `);

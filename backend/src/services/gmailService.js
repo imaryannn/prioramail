@@ -1,4 +1,5 @@
 import { googleAuthService } from './googleAuth.js';
+import he from 'he';
 
 // Keyword-based categorization (no AI)
 function keywordBasedCategorization(email) {
@@ -7,15 +8,34 @@ function keywordBasedCategorization(email) {
   const from = email.from?.toLowerCase() || '';
   const text = `${subject} ${snippet} ${from}`;
 
-  // Verification codes - check first (highest priority for these)
-  if (text.includes('verification') || text.includes('verify') || text.includes('otp') || 
-      text.includes('code') || text.includes('passcode') ||
-      text.includes('authenticate') || text.includes('2fa') || text.includes('two-factor') ||
+  // Promotions and marketing - check FIRST to avoid false verification matches
+  if (text.includes('discount') || text.includes('offer') || text.includes('sale') || 
+      text.includes('deal') || text.includes('promo') || text.includes('coupon') || 
+      text.includes('% off') || text.includes('percent off') || 
+      text.includes('limited time') || text.includes('special offer') ||
+      text.includes('use code') || text.includes('promo code') || text.includes('discount code') ||
+      text.includes('save big') || text.includes('don\'t miss') || text.includes('ending soon')) {
+    return 'promotions';
+  }
+
+  // Newsletters - check early
+  if (text.includes('newsletter') || text.includes('unsubscribe') || 
+      text.includes('weekly digest') || text.includes('monthly update') || 
+      text.includes('subscribe') || text.includes('mailing list') ||
+      text.includes('view this issue') || text.includes('view it in your browser')) {
+    return 'newsletters';
+  }
+
+  // Verification codes - more specific patterns
+  if (text.includes('verification code') || text.includes('verify your') || 
+      text.includes('otp') || text.includes('one-time password') ||
+      text.includes('authentication code') || text.includes('2fa') || text.includes('two-factor') ||
       text.includes('security code') || text.includes('login code') || 
       text.includes('sign in code') || text.includes('signin code') ||
-      text.includes('confirm your') && (text.includes('email') || text.includes('account')) ||
-      text.includes('one-time') || text.includes('temporary code') ||
-      /\b\d{4,8}\b/.test(text) && (text.includes('your') || text.includes('code'))) {
+      text.includes('confirm your email') || text.includes('confirm your account') ||
+      text.includes('temporary code') || text.includes('access code') ||
+      subject.includes('your code') && !text.includes('use code') ||
+      /\b\d{4,8}\b/.test(subject) && (subject.includes('code') || subject.includes('verify'))) {
     return 'verification';
   }
 
@@ -33,21 +53,6 @@ function keywordBasedCategorization(email) {
       text.includes('connection request') || text.includes('friend request') || 
       text.includes('mentioned you') || text.includes('tagged you')) {
     return 'social';
-  }
-
-  // Promotions and marketing
-  if (text.includes('discount') || text.includes('offer') || text.includes('sale') || 
-      text.includes('deal') || text.includes('promo') || text.includes('coupon') || 
-      text.includes('% off') || text.includes('percent off') || text.includes('save') && text.includes('$') ||
-      text.includes('limited time') || text.includes('special offer')) {
-    return 'promotions';
-  }
-
-  // Newsletters
-  if (text.includes('newsletter') || text.includes('unsubscribe') || 
-      text.includes('weekly digest') || text.includes('monthly update') || 
-      text.includes('subscribe') || text.includes('mailing list')) {
-    return 'newsletters';
   }
 
   // Updates and notifications
@@ -126,7 +131,9 @@ export const gmailService = {
         body = Buffer.from(part.body.data, 'base64').toString('utf-8');
       }
       if (part.mimeType === 'text/html' && part.body.data) {
-        htmlBody = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        const rawHtml = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        // Decode HTML entities (sometimes Gmail encodes them)
+        htmlBody = he.decode(rawHtml);
       }
       if (part.parts) {
         part.parts.forEach(extractBody);
@@ -134,7 +141,13 @@ export const gmailService = {
     };
 
     if (emailData.payload.body.data) {
-      body = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8');
+      const rawBody = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8');
+      // Check if it's HTML or plain text
+      if (emailData.payload.mimeType === 'text/html') {
+        htmlBody = he.decode(rawBody);
+      } else {
+        body = rawBody;
+      }
     } else if (emailData.payload.parts) {
       emailData.payload.parts.forEach(extractBody);
     }

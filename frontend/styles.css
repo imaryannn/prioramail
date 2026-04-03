@@ -1688,7 +1688,7 @@ body {
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 1rem;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     background: var(--white);
     border: none;
     border-bottom: 1px solid var(--border);
@@ -1698,6 +1698,7 @@ body {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    align-items: start;
 }
 
 .email-item:last-child {
@@ -1764,11 +1765,14 @@ body {
 .email-preview {
     font-size: 0.8125rem;
     color: var(--text-light);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
     line-height: 1.4;
     font-weight: 400;
+    max-height: 2.8em;
 }
 
 .email-time {
