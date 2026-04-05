@@ -10,6 +10,7 @@ const state = {
     token: null,
     aiCategorized: false,
     isLoadingInbox: false,
+    composeAttachments: [],
     pagination: {
         currentPage: 1,
         emailsPerPage: 50,
@@ -203,6 +204,9 @@ function setupEventListeners() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
+    
+    // Compose toolbar
+    setupComposeToolbar();
 }
 
 // Authentication
@@ -374,7 +378,8 @@ async function loadEmails(reset = true, useAI = false) {
                 htmlBody: email.htmlBody || '',
                 date: new Date(email.date),
                 unread: email.unread,
-                priority: email.priority || 'later'
+                priority: email.priority || 'later',
+                attachments: email.attachments || []
             });
             
             state.loading.loaded = i + 1;
@@ -632,17 +637,27 @@ function renderEmailList() {
         return;
     }
 
-    const emailItems = filteredEmails.map(email => `
+    const emailItems = filteredEmails.map(email => {
+        let previewText = email.preview;
+        
+        // If no preview and has attachments, show attachment names
+        if (!previewText && email.attachments && email.attachments.length > 0) {
+            const attachmentNames = email.attachments.map(att => att.filename).join(', ');
+            previewText = `📎 ${attachmentNames}`;
+        }
+        
+        return `
         <div class="email-item ${email.unread ? 'unread' : ''}" data-id="${email.id}">
             <img src="${email.from.avatar}" alt="${email.from.name}" class="avatar-small">
             <div>
                 <div class="email-sender">${email.from.name}</div>
                 <div class="email-subject">${email.subject}</div>
-                <div class="email-preview">${email.preview}</div>
+                <div class="email-preview">${previewText}</div>
             </div>
             <div class="email-time">${formatDate(email.date)}</div>
         </div>
-    `).join('');
+    `;
+    }).join('');
     
     emailList.innerHTML = `<div class="email-list-container">${emailItems}</div>`;
 
@@ -687,6 +702,43 @@ function showEmail(emailId) {
     document.getElementById('email-date').textContent = formatDate(email.date);
     
     const emailBodyElement = document.getElementById('email-body');
+    const emailViewElement = document.getElementById('email-view');
+    const emailHeaderElement = document.querySelector('.email-header');
+    const emailMetaElement = document.querySelector('.email-meta');
+    
+    // Remove no-body-content class if it exists
+    emailBodyElement.classList.remove('no-body-content');
+    emailViewElement.classList.remove('no-body-content');
+    emailBodyElement.style.padding = '';
+    emailBodyElement.style.paddingTop = '';
+    emailBodyElement.style.paddingBottom = '';
+    if (emailHeaderElement) emailHeaderElement.style.marginBottom = '';
+    if (emailMetaElement) emailMetaElement.style.marginBottom = '';
+    
+    // Check if email has any content
+    const hasBody = (email.htmlBody && email.htmlBody.trim()) || (email.body && email.body.trim()) || (email.preview && email.preview.trim());
+    const hasAttachments = email.attachments && email.attachments.length > 0;
+    
+    // Display attachments if any
+    let attachmentsHtml = '';
+    if (hasAttachments) {
+        attachmentsHtml = '<div style="margin-top: ' + (hasBody ? '20px' : '0') + '; padding: 15px; background: #f3f4f6; border-radius: 8px;"><h4 style="margin: 0 0 10px 0; font-size: 14px; color: #374151;">Attachments (' + email.attachments.length + ')</h4>';
+        email.attachments.forEach(att => {
+            const isImage = att.mimeType.startsWith('image/');
+            const icon = isImage ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+            const sizeKB = Math.round(att.size / 1024);
+            const downloadUrl = `${API_URL}/emails/${email.id}/attachments/${att.attachmentId}`;
+            attachmentsHtml += `<div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: white; border-radius: 4px; margin-bottom: 8px;"><span style="color: #52796F;">${icon}</span><div style="flex: 1;"><div style="font-weight: 500; color: #1f2937;">${att.filename}</div><div style="font-size: 12px; color: #6b7280;">${sizeKB} KB</div></div><button onclick="downloadAttachment('${downloadUrl}', '${att.filename}')" style="padding: 6px 12px; background: #52796F; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Download</button></div>`;
+            
+            // Add image preview if it's an image
+            if (isImage) {
+                attachmentsHtml += `<div style="margin-bottom: 10px;" id="img-preview-${att.attachmentId}"><div style="color: #6b7280; font-size: 12px;">Loading preview...</div></div>`;
+                // Load image preview asynchronously
+                setTimeout(() => loadImagePreview(downloadUrl, att.attachmentId, att.filename), 100);
+            }
+        });
+        attachmentsHtml += '</div>';
+    }
     
     // Sanitize and render HTML emails properly
     if (email.htmlBody && email.htmlBody.trim()) {
@@ -700,6 +752,13 @@ function showEmail(emailId) {
         
         emailBodyElement.innerHTML = '';
         emailBodyElement.appendChild(iframe);
+        
+        // Add attachments after iframe
+        if (attachmentsHtml) {
+            const attachmentsDiv = document.createElement('div');
+            attachmentsDiv.innerHTML = attachmentsHtml;
+            emailBodyElement.appendChild(attachmentsDiv);
+        }
         
         // Write HTML content to iframe
         const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -757,10 +816,36 @@ function showEmail(emailId) {
                 iframe.style.height = '600px';
             }
         };
-    } else {
+    } else if (email.body && email.body.trim()) {
         // Plain text email
-        emailBodyElement.textContent = email.body || email.preview || 'No content';
-        emailBodyElement.style.whiteSpace = 'pre-wrap';
+        emailBodyElement.innerHTML = '';
+        const textDiv = document.createElement('div');
+        textDiv.textContent = email.body;
+        textDiv.style.whiteSpace = 'pre-wrap';
+        emailBodyElement.appendChild(textDiv);
+        
+        // Add attachments after text
+        if (attachmentsHtml) {
+            const attachmentsDiv = document.createElement('div');
+            attachmentsDiv.innerHTML = attachmentsHtml;
+            emailBodyElement.appendChild(attachmentsDiv);
+        }
+    } else {
+        // No body content, only attachments - remove padding
+        emailBodyElement.classList.add('no-body-content');
+        emailViewElement.classList.add('no-body-content');
+        emailBodyElement.style.padding = '0';
+        emailBodyElement.style.paddingTop = '0';
+        emailBodyElement.style.paddingBottom = '0';
+        const emailHeaderElement = document.querySelector('.email-header');
+        if (emailHeaderElement) {
+            emailHeaderElement.style.marginBottom = '0.5rem';
+        }
+        const emailMetaElement = document.querySelector('.email-meta');
+        if (emailMetaElement) {
+            emailMetaElement.style.marginBottom = '0';
+        }
+        emailBodyElement.innerHTML = attachmentsHtml || '<div style="color: #6b7280; font-style: italic;">No content</div>';
     }
 
     emailList.style.display = 'none';
@@ -879,7 +964,8 @@ async function loadViewEmails(view) {
                 htmlBody: email.htmlBody || '',
                 date: new Date(email.date),
                 unread: email.unread,
-                priority: email.priority || 'later'
+                priority: email.priority || 'later',
+                attachments: email.attachments || []
             });
         }
         
@@ -938,28 +1024,81 @@ function handleSearch(e) {
 // Compose
 function openComposeModal() {
     composeModal.classList.remove('hidden');
+    document.getElementById('compose-editor').innerHTML = '';
+    document.getElementById('attachments-preview').innerHTML = '';
+    state.composeAttachments = [];
+    
+    // Reset email inputs
+    document.getElementById('to-inputs').innerHTML = `
+        <div class="email-input-row">
+            <input type="email" class="email-input" placeholder="Email address" required>
+            <button type="button" class="btn-add-email" data-target="to-inputs">+</button>
+        </div>
+    `;
+    document.getElementById('cc-inputs').innerHTML = `
+        <div class="email-input-row">
+            <input type="email" class="email-input" placeholder="Email address">
+            <button type="button" class="btn-add-email" data-target="cc-inputs">+</button>
+        </div>
+    `;
+    document.getElementById('bcc-inputs').innerHTML = `
+        <div class="email-input-row">
+            <input type="email" class="email-input" placeholder="Email address">
+            <button type="button" class="btn-add-email" data-target="bcc-inputs">+</button>
+        </div>
+    `;
+    
+    setupEmailInputListeners();
 }
 
 function closeComposeModal() {
     composeModal.classList.add('hidden');
     composeForm.reset();
+    document.getElementById('compose-editor').innerHTML = '';
+    document.getElementById('cc-group').classList.add('hidden');
+    document.getElementById('bcc-group').classList.add('hidden');
+    document.getElementById('attachments-preview').innerHTML = '';
+    state.composeAttachments = [];
 }
 
 async function handleSendEmail(e) {
     e.preventDefault();
     
-    const to = document.getElementById('compose-to').value;
+    // Collect all email addresses
+    const toEmails = Array.from(document.querySelectorAll('#to-inputs .email-input'))
+        .map(input => input.value.trim())
+        .filter(email => email);
+    
+    const ccEmails = Array.from(document.querySelectorAll('#cc-inputs .email-input'))
+        .map(input => input.value.trim())
+        .filter(email => email);
+    
+    const bccEmails = Array.from(document.querySelectorAll('#bcc-inputs .email-input'))
+        .map(input => input.value.trim())
+        .filter(email => email);
+    
     const subject = document.getElementById('compose-subject').value;
-    const body = document.getElementById('compose-body').value;
+    const body = document.getElementById('compose-editor').innerHTML;
 
     try {
+        const formData = new FormData();
+        formData.append('to', toEmails.join(', '));
+        formData.append('cc', ccEmails.join(', '));
+        formData.append('bcc', bccEmails.join(', '));
+        formData.append('subject', subject);
+        formData.append('body', body);
+        
+        // Add file attachments
+        state.composeAttachments.forEach((file, index) => {
+            formData.append('attachments', file);
+        });
+        
         const response = await fetch(`${API_URL}/emails/send`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${state.token}`
             },
-            body: JSON.stringify({ to, subject, body })
+            body: formData
         });
 
         if (!response.ok) {
@@ -1002,6 +1141,189 @@ function formatDate(date) {
     if (hours < 48) return 'Yesterday';
     
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Download attachment function
+function downloadAttachment(url, filename) {
+    fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${state.token}`
+        }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Download failed');
+            return response.blob();
+        })
+        .then(blob => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Download failed:', error);
+            alert('Failed to download attachment');
+        });
+}
+
+// Load image preview with authentication
+function loadImagePreview(url, attachmentId, filename) {
+    fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${state.token}`
+        }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load image');
+            return response.blob();
+        })
+        .then(blob => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const previewDiv = document.getElementById(`img-preview-${attachmentId}`);
+            if (previewDiv) {
+                previewDiv.innerHTML = `<img src="${blobUrl}" alt="${filename}" style="max-width: 100%; max-height: 400px; border-radius: 4px; border: 1px solid #e5e7eb;"/>`;
+            }
+        })
+        .catch(error => {
+            console.error('Failed to load image preview:', error);
+            const previewDiv = document.getElementById(`img-preview-${attachmentId}`);
+            if (previewDiv) {
+                previewDiv.style.display = 'none';
+            }
+        });
+}
+
+// Make functions available globally
+window.downloadAttachment = downloadAttachment;
+window.loadImagePreview = loadImagePreview;
+
+// Compose toolbar setup
+function setupComposeToolbar() {
+    // CC/BCC buttons
+    document.getElementById('btn-cc')?.addEventListener('click', () => {
+        document.getElementById('cc-group').classList.toggle('hidden');
+    });
+    
+    document.getElementById('btn-bcc')?.addEventListener('click', () => {
+        document.getElementById('bcc-group').classList.toggle('hidden');
+    });
+    
+    setupEmailInputListeners();
+    
+    // Formatting buttons
+    document.getElementById('btn-bold')?.addEventListener('click', () => {
+        document.execCommand('bold', false, null);
+    });
+    
+    document.getElementById('btn-italic')?.addEventListener('click', () => {
+        document.execCommand('italic', false, null);
+    });
+    
+    document.getElementById('btn-underline')?.addEventListener('click', () => {
+        document.execCommand('underline', false, null);
+    });
+    
+    document.getElementById('btn-ul')?.addEventListener('click', () => {
+        document.execCommand('insertUnorderedList', false, null);
+    });
+    
+    document.getElementById('btn-ol')?.addEventListener('click', () => {
+        document.execCommand('insertOrderedList', false, null);
+    });
+    
+    document.getElementById('btn-link')?.addEventListener('click', () => {
+        const url = prompt('Enter URL:');
+        if (url) {
+            document.execCommand('createLink', false, url);
+        }
+    });
+    
+    // Image upload
+    document.getElementById('compose-image')?.addEventListener('change', (e) => {
+        const files = e.target.files;
+        for (let file of files) {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = `<img src="${event.target.result}" alt="${file.name}" style="max-width: 100%; height: auto;">`;
+                    document.getElementById('compose-editor').innerHTML += img;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        e.target.value = '';
+    });
+    
+    // File attachments
+    document.getElementById('compose-attachment')?.addEventListener('change', (e) => {
+        const files = e.target.files;
+        const preview = document.getElementById('attachments-preview');
+        
+        for (let file of files) {
+            state.composeAttachments.push(file);
+            
+            const item = document.createElement('div');
+            item.className = 'attachment-item';
+            item.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                    <polyline points="13 2 13 9 20 9"></polyline>
+                </svg>
+                <span>${file.name}</span>
+                <button type="button" class="attachment-remove" data-filename="${file.name}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+            
+            item.querySelector('.attachment-remove').addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                state.composeAttachments = state.composeAttachments.filter(f => f.name !== filename);
+                item.remove();
+            });
+            
+            preview.appendChild(item);
+        }
+        
+        e.target.value = '';
+    });
+}
+
+// Setup email input listeners for add/remove buttons
+function setupEmailInputListeners() {
+    document.querySelectorAll('.btn-add-email').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const container = document.getElementById(targetId);
+            
+            const newRow = document.createElement('div');
+            newRow.className = 'email-input-row';
+            newRow.innerHTML = `
+                <input type="email" class="email-input" placeholder="Email address">
+                <button type="button" class="btn-remove-email">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+            
+            container.appendChild(newRow);
+            setupEmailInputListeners();
+        });
+    });
+    
+    document.querySelectorAll('.btn-remove-email').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.email-input-row').remove();
+        });
+    });
 }
 
 // Start the app

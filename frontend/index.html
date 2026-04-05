@@ -633,16 +633,129 @@
                     <button class="btn-close">×</button>
                 </div>
                 <form id="compose-form">
-                    <input type="email" id="compose-to" placeholder="To" required>
+                    <div class="email-input-group">
+                        <label>To</label>
+                        <div class="email-inputs" id="to-inputs">
+                            <div class="email-input-row">
+                                <input type="email" class="email-input" placeholder="Email address" required>
+                                <button type="button" class="btn-add-email" data-target="to-inputs">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="compose-options">
+                        <button type="button" class="btn-option" id="btn-cc">Cc</button>
+                        <button type="button" class="btn-option" id="btn-bcc">Bcc</button>
+                    </div>
+                    <div class="email-input-group hidden" id="cc-group">
+                        <label>Cc</label>
+                        <div class="email-inputs" id="cc-inputs">
+                            <div class="email-input-row">
+                                <input type="email" class="email-input" placeholder="Email address">
+                                <button type="button" class="btn-add-email" data-target="cc-inputs">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="email-input-group hidden" id="bcc-group">
+                        <label>Bcc</label>
+                        <div class="email-inputs" id="bcc-inputs">
+                            <div class="email-input-row">
+                                <input type="email" class="email-input" placeholder="Email address">
+                                <button type="button" class="btn-add-email" data-target="bcc-inputs">+</button>
+                            </div>
+                        </div>
+                    </div>
                     <input type="text" id="compose-subject" placeholder="Subject">
-                    <textarea id="compose-body" placeholder="Message" rows="12"></textarea>
+                    <div class="compose-toolbar">
+                        <button type="button" class="toolbar-btn" id="btn-bold" title="Bold">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="toolbar-btn" id="btn-italic" title="Italic">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="4" x2="10" y2="4"></line>
+                                <line x1="14" y1="20" x2="5" y2="20"></line>
+                                <line x1="15" y1="4" x2="9" y2="20"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="toolbar-btn" id="btn-underline" title="Underline">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path>
+                                <line x1="4" y1="21" x2="20" y2="21"></line>
+                            </svg>
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button type="button" class="toolbar-btn" id="btn-ul" title="Bullet List">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="toolbar-btn" id="btn-ol" title="Numbered List">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="10" y1="6" x2="21" y2="6"></line>
+                                <line x1="10" y1="12" x2="21" y2="12"></line>
+                                <line x1="10" y1="18" x2="21" y2="18"></line>
+                                <path d="M4 6h1v4"></path>
+                                <path d="M4 10h2"></path>
+                                <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
+                            </svg>
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button type="button" class="toolbar-btn" id="btn-link" title="Insert Link">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                            </svg>
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <label class="toolbar-btn" for="compose-image" title="Insert Image">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <input type="file" id="compose-image" accept="image/*" class="hidden" multiple>
+                        </label>
+                        <label class="toolbar-btn" for="compose-attachment" title="Attach File">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                            <input type="file" id="compose-attachment" class="hidden" multiple>
+                        </label>
+                    </div>
+                    <div id="compose-editor" contenteditable="true" class="compose-editor" placeholder="Message"></div>
+                    <div id="attachments-preview" class="attachments-preview"></div>
                     <div class="modal-actions">
-                        <button type="submit" class="btn-primary">Send</button>
+                        <button type="submit" class="btn-primary" id="send-btn">
+                            <span class="btn-text">Send</span>
+                            <span class="btn-spinner hidden">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spinner">
+                                    <line x1="12" y1="2" x2="12" y2="6"></line>
+                                    <line x1="12" y1="18" x2="12" y2="22"></line>
+                                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                                    <line x1="2" y1="12" x2="6" y2="12"></line>
+                                    <line x1="18" y1="12" x2="22" y2="12"></line>
+                                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                                </svg>
+                                Sending...
+                            </span>
+                        </button>
                         <button type="button" class="btn-secondary btn-cancel">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
+        
+        <!-- Toast Container -->
+        <div id="toast-container" class="toast-container"></div>
     </div>
 
     <script src="liquid-glass.js"></script>

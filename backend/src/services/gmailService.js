@@ -165,8 +165,19 @@ export const gmailService = {
 
     let body = '';
     let htmlBody = '';
+    let attachments = [];
     
     const extractBody = (part) => {
+      // Check for attachments
+      if (part.filename && part.filename.length > 0) {
+        attachments.push({
+          filename: part.filename,
+          mimeType: part.mimeType,
+          size: part.body.size,
+          attachmentId: part.body.attachmentId
+        });
+      }
+      
       if (part.mimeType === 'text/plain' && part.body.data) {
         body = Buffer.from(part.body.data, 'base64').toString('utf-8');
       }
@@ -204,6 +215,7 @@ export const gmailService = {
       snippet: emailData.snippet,
       unread: emailData.labelIds?.includes('UNREAD') || false,
       labels: emailData.labelIds || [],
+      attachments: attachments,
     };
   },
 };
