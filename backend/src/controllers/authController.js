@@ -12,9 +12,10 @@ export const authController = {
   googleCallback: async (req, res) => {
     try {
       const { code } = req.query;
+      const frontendUrl = config.frontend.url;
 
       if (!code) {
-        return res.redirect(`http://127.0.0.1:3001/frontend?error=no_code`);
+        return res.redirect(`${frontendUrl}?error=no_code`);
       }
 
       const tokens = await googleAuthService.getTokens(code);
@@ -48,10 +49,11 @@ export const authController = {
         { expiresIn: config.jwt.expiresIn }
       );
 
-      res.redirect(`http://127.0.0.1:3001/frontend?token=${jwtToken}`);
+      res.redirect(`${frontendUrl}?token=${jwtToken}`);
     } catch (error) {
       console.error('Google callback error:', error);
-        res.redirect(`http://127.0.0.1:3001/frontend?error=auth_failed`);
+      const frontendUrl = config.frontend.url;
+      res.redirect(`${frontendUrl}?error=auth_failed`);
     }
   },
 
