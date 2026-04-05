@@ -108,26 +108,60 @@ export const gmailService = {
       query = 'in:inbox';
     }
     
-    const listParams = {
-      userId: 'me',
-      maxResults: maxResults,
-      pageToken: pageToken
-    };
-    
-    if (labelIds.length > 0 && !query) {
-      listParams.labelIds = labelIds;
+    // For drafts, use drafts.list instead of messages.list
+    let response;
+    if (label === 'DRAFT') {
+      response = await gmail.users.drafts.list({
+        userId: 'me',
+        maxResults: maxResults,
+        pageToken: pageToken
+      });
     } else {
-      listParams.q = query;
+      const listParams = {
+        userId: 'me',
+        maxResults: maxResults,
+        pageToken: pageToken
+      };
+      
+      if (labelIds.length > 0 && !query) {
+        listParams.labelIds = labelIds;
+      } else {
+        listParams.q = query;
+      }
+      
+      response = await gmail.users.messages.list(listParams);
     }
-    
-    const response = await gmail.users.messages.list(listParams);
 
-    if (!response.data.messages || response.data.messages.length === 0) {
+    // Check for messages or drafts
+    const items = label === 'DRAFT' ? response.data.drafts : response.data.messages;
+    if (!items || items.length === 0) {
       return { emails: [], nextPageToken: null };
     }
 
     // Fetch full email details
-    const emailPromises = response.data.messages.map(async (message) => {
+    const emailPromises = items.map(async (message) => {
+      // For drafts, we need to fetch the draft object
+      if (label === 'DRAFT') {
+        try {
+          const draft = await gmail.users.drafts.get({
+            userId: 'me',
+            id: message.id,
+            format: 'full'
+          });
+          
+          const parsed = this.parseEmail(draft.data.message);
+          parsed.draftId = draft.data.id;
+          parsed.priority = keywordBasedCategorization(parsed);
+          return parsed;
+        } catch (error) {
+          // Draft was deleted, skip it
+          if (error.code === 404) {
+            return null;
+          }
+          throw error;
+        }
+      }
+      
       const email = await gmail.users.messages.get({
         userId: 'me',
         id: message.id,
@@ -143,6 +177,9 @@ export const gmailService = {
     });
 
     let emails = await Promise.all(emailPromises);
+    
+    // Filter out null entries (deleted drafts)
+    emails = emails.filter(email => email !== null);
     
     // For SENT view, filter out emails that don't have user's email in From header
     if (label === 'SENT') {
@@ -208,6 +245,8 @@ export const gmailService = {
       threadId: emailData.threadId,
       from: getHeader('From'),
       to: getHeader('To'),
+      cc: getHeader('Cc'),
+      bcc: getHeader('Bcc'),
       subject: getHeader('Subject'),
       date: new Date(parseInt(emailData.internalDate)),
       body: body,

@@ -11,6 +11,7 @@ const state = {
     aiCategorized: false,
     isLoadingInbox: false,
     composeAttachments: [],
+    currentDraftId: null,
     pagination: {
         currentPage: 1,
         emailsPerPage: 50,
@@ -187,6 +188,11 @@ function setupEventListeners() {
     if (closeBtn) closeBtn.addEventListener('click', closeComposeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeComposeModal);
     if (composeForm) composeForm.addEventListener('submit', handleSendEmail);
+    
+    // Save draft button
+    const saveDraftBtn = document.getElementById('save-draft-btn');
+    if (saveDraftBtn) saveDraftBtn.addEventListener('click', handleSaveDraft);
+    
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             emailView.classList.add('hidden');
@@ -217,7 +223,7 @@ async function handleGoogleLogin() {
         window.location.href = data.authUrl;
     } catch (error) {
         console.error('Login failed:', error);
-        alert('Login failed. Please try again.');
+        showToast('Login failed. Please try again.', 'error');
     }
 }
 
@@ -695,6 +701,12 @@ function showEmail(emailId) {
     state.selectedEmail = email;
     email.unread = false;
 
+    // If it's a draft, open compose modal instead
+    if (email.isDraft) {
+        openComposeModalWithDraft(email);
+        return;
+    }
+
     document.getElementById('email-subject').textContent = email.subject;
     document.getElementById('sender-avatar').src = email.from.avatar;
     document.getElementById('sender-name').textContent = email.from.name;
@@ -965,7 +977,9 @@ async function loadViewEmails(view) {
                 date: new Date(email.date),
                 unread: email.unread,
                 priority: email.priority || 'later',
-                attachments: email.attachments || []
+                attachments: email.attachments || [],
+                isDraft: view === 'drafts',
+                draftId: view === 'drafts' ? email.draftId : null
             });
         }
         
@@ -1027,6 +1041,7 @@ function openComposeModal() {
     document.getElementById('compose-editor').innerHTML = '';
     document.getElementById('attachments-preview').innerHTML = '';
     state.composeAttachments = [];
+    state.currentDraftId = null;
     
     // Reset email inputs
     document.getElementById('to-inputs').innerHTML = `
@@ -1048,6 +1063,10 @@ function openComposeModal() {
         </div>
     `;
     
+    // Reset CC/BCC visibility
+    document.getElementById('cc-group').classList.add('hidden');
+    document.getElementById('bcc-group').classList.add('hidden');
+    
     setupEmailInputListeners();
 }
 
@@ -1063,6 +1082,10 @@ function closeComposeModal() {
 
 async function handleSendEmail(e) {
     e.preventDefault();
+    
+    const sendBtn = document.getElementById('send-btn');
+    const btnText = sendBtn.querySelector('.btn-text');
+    const btnSpinner = sendBtn.querySelector('.btn-spinner');
     
     // Collect all email addresses
     const toEmails = Array.from(document.querySelectorAll('#to-inputs .email-input'))
@@ -1080,19 +1103,32 @@ async function handleSendEmail(e) {
     const subject = document.getElementById('compose-subject').value;
     const body = document.getElementById('compose-editor').innerHTML;
 
-    try {
-        const formData = new FormData();
-        formData.append('to', toEmails.join(', '));
-        formData.append('cc', ccEmails.join(', '));
-        formData.append('bcc', bccEmails.join(', '));
-        formData.append('subject', subject);
-        formData.append('body', body);
-        
-        // Add file attachments
-        state.composeAttachments.forEach((file, index) => {
-            formData.append('attachments', file);
+    // Prepare form data first
+    const formData = new FormData();
+    formData.append('to', toEmails.join(', '));
+    formData.append('cc', ccEmails.join(', '));
+    formData.append('bcc', bccEmails.join(', '));
+    formData.append('subject', subject);
+    formData.append('body', body);
+    
+    // Add file attachments
+    state.composeAttachments.forEach((file, index) => {
+        formData.append('attachments', file);
+    });
+
+    // Show sending state
+    sendBtn.disabled = true;
+    btnText.classList.add('hidden');
+    btnSpinner.classList.remove('hidden');
+    
+    // Force browser to repaint before sending
+    await new Promise(resolve => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
         });
-        
+    });
+
+    try {
         const response = await fetch(`${API_URL}/emails/send`, {
             method: 'POST',
             headers: {
@@ -1105,11 +1141,30 @@ async function handleSendEmail(e) {
             throw new Error('Failed to send email');
         }
         
-        alert('Email sent successfully!');
+        // If this was a draft, delete it after sending
+        if (state.currentDraftId) {
+            try {
+                await fetch(`${API_URL}/emails/draft/${state.currentDraftId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${state.token}`
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to delete draft after sending:', error);
+            }
+        }
+        
+        showToast('Email sent successfully!', 'success');
         closeComposeModal();
     } catch (error) {
         console.error('Failed to send email:', error);
-        alert('Failed to send email. Please try again.');
+        showToast('Failed to send email. Please try again.', 'error');
+    } finally {
+        // Reset button state
+        sendBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
     }
 }
 
@@ -1328,3 +1383,238 @@ function setupEmailInputListeners() {
 
 // Start the app
 init();
+
+
+// Toast Notification System
+function showToast(message, type = 'info', duration = 4000) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const icons = {
+        success: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>`,
+        error: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>`,
+        info: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>`
+    };
+    
+    const titles = {
+        success: 'Success',
+        error: 'Error',
+        info: 'Info'
+    };
+    
+    toast.innerHTML = `
+        ${icons[type]}
+        <div class="toast-content">
+            <div class="toast-title">${titles[type]}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Close button handler
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => {
+        removeToast(toast);
+    });
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        removeToast(toast);
+    }, duration);
+}
+
+function removeToast(toast) {
+    toast.classList.add('removing');
+    setTimeout(() => {
+        toast.remove();
+    }, 300);
+}
+
+
+// Save Draft Function
+async function handleSaveDraft() {
+    const saveDraftBtn = document.getElementById('save-draft-btn');
+    const originalText = saveDraftBtn.innerHTML;
+    
+    // Collect all email addresses
+    const toEmails = Array.from(document.querySelectorAll('#to-inputs .email-input'))
+        .map(input => input.value.trim())
+        .filter(email => email);
+    
+    const ccEmails = Array.from(document.querySelectorAll('#cc-inputs .email-input'))
+        .map(input => input.value.trim())
+        .filter(email => email);
+    
+    const bccEmails = Array.from(document.querySelectorAll('#bcc-inputs .email-input'))
+        .map(input => input.value.trim())
+        .filter(email => email);
+    
+    const subject = document.getElementById('compose-subject').value;
+    const body = document.getElementById('compose-editor').innerHTML;
+    
+    // Check if there's any content to save
+    if (!toEmails.length && !subject && !body) {
+        showToast('Nothing to save', 'info');
+        return;
+    }
+    
+    try {
+        saveDraftBtn.disabled = true;
+        saveDraftBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spinner">
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+            </svg>
+            Saving...
+        `;
+        
+        await new Promise(resolve => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            });
+        });
+        
+        const response = await fetch(`${API_URL}/emails/draft`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({
+                to: toEmails.join(', '),
+                cc: ccEmails.join(', '),
+                bcc: bccEmails.join(', '),
+                subject,
+                body
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to save draft');
+        }
+        
+        showToast('Draft saved successfully!', 'success');
+        closeComposeModal();
+    } catch (error) {
+        console.error('Failed to save draft:', error);
+        showToast('Failed to save draft. Please try again.', 'error');
+    } finally {
+        saveDraftBtn.disabled = false;
+        saveDraftBtn.innerHTML = originalText;
+    }
+}
+
+
+// Open Compose Modal with Draft
+function openComposeModalWithDraft(email) {
+    composeModal.classList.remove('hidden');
+    
+    // Parse To, CC, BCC from email headers
+    const toEmails = email.to ? email.to.split(',').map(e => e.trim()).filter(e => e) : [];
+    const ccEmails = email.cc ? email.cc.split(',').map(e => e.trim()).filter(e => e) : [];
+    const bccEmails = email.bcc ? email.bcc.split(',').map(e => e.trim()).filter(e => e) : [];
+    
+    // Set To emails
+    const toInputsContainer = document.getElementById('to-inputs');
+    toInputsContainer.innerHTML = '';
+    if (toEmails.length > 0) {
+        toEmails.forEach((email, index) => {
+            const row = document.createElement('div');
+            row.className = 'email-input-row';
+            row.innerHTML = `
+                <input type="email" class="email-input" placeholder="Email address" value="${email}" ${index === 0 ? 'required' : ''}>
+                ${index === 0 ? 
+                    '<button type="button" class="btn-add-email" data-target="to-inputs">+</button>' :
+                    '<button type="button" class="btn-remove-email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>'
+                }
+            `;
+            toInputsContainer.appendChild(row);
+        });
+    } else {
+        toInputsContainer.innerHTML = `
+            <div class="email-input-row">
+                <input type="email" class="email-input" placeholder="Email address" required>
+                <button type="button" class="btn-add-email" data-target="to-inputs">+</button>
+            </div>
+        `;
+    }
+    
+    // Set CC emails if any
+    if (ccEmails.length > 0) {
+        document.getElementById('cc-group').classList.remove('hidden');
+        const ccInputsContainer = document.getElementById('cc-inputs');
+        ccInputsContainer.innerHTML = '';
+        ccEmails.forEach((email, index) => {
+            const row = document.createElement('div');
+            row.className = 'email-input-row';
+            row.innerHTML = `
+                <input type="email" class="email-input" placeholder="Email address" value="${email}">
+                ${index === 0 ? 
+                    '<button type="button" class="btn-add-email" data-target="cc-inputs">+</button>' :
+                    '<button type="button" class="btn-remove-email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>'
+                }
+            `;
+            ccInputsContainer.appendChild(row);
+        });
+    }
+    
+    // Set BCC emails if any
+    if (bccEmails.length > 0) {
+        document.getElementById('bcc-group').classList.remove('hidden');
+        const bccInputsContainer = document.getElementById('bcc-inputs');
+        bccInputsContainer.innerHTML = '';
+        bccEmails.forEach((email, index) => {
+            const row = document.createElement('div');
+            row.className = 'email-input-row';
+            row.innerHTML = `
+                <input type="email" class="email-input" placeholder="Email address" value="${email}">
+                ${index === 0 ? 
+                    '<button type="button" class="btn-add-email" data-target="bcc-inputs">+</button>' :
+                    '<button type="button" class="btn-remove-email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>'
+                }
+            `;
+            bccInputsContainer.appendChild(row);
+        });
+    }
+    
+    // Set subject
+    document.getElementById('compose-subject').value = email.subject === '(No Subject)' ? '' : email.subject;
+    
+    // Set body
+    document.getElementById('compose-editor').innerHTML = email.htmlBody || email.body || '';
+    
+    // Store draft ID in state for later use
+    state.currentDraftId = email.draftId;
+    
+    // Update button text to show we're editing a draft
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.querySelector('.btn-text').textContent = 'Send';
+    
+    // Re-setup email input listeners
+    setupEmailInputListeners();
+}
