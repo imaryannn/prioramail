@@ -4,10 +4,12 @@ const state = {
     emails: [],
     currentView: 'inbox',
     currentPriority: 'latest',
+    currentLabel: null,
     selectedEmail: null,
     searchQuery: '',
     token: null,
     aiCategorized: false,
+    isLoadingInbox: false,
     pagination: {
         currentPage: 1,
         emailsPerPage: 50,
@@ -234,16 +236,26 @@ async function loadUserProfile() {
         console.log('User loaded:', user);
         state.user = user;
         showMainScreen();
-        await loadEmails();
         
-        // Load more emails automatically after initial load
-        while (state.pagination.hasMore && state.emails.length < 50) {
-            await loadEmails(false, false);
+        // Set flag that we're loading inbox
+        state.isLoadingInbox = true;
+        
+        // Only load inbox emails if we're still on inbox view
+        if (state.currentView === 'inbox') {
+            await loadEmails();
+            
+            // Load more emails automatically after initial load
+            while (state.isLoadingInbox && state.pagination.hasMore && state.emails.length < 50 && state.currentView === 'inbox') {
+                await loadEmails(false, false);
+            }
         }
+        
+        state.isLoadingInbox = false;
     } catch (error) {
         console.error('Failed to load profile:', error);
         localStorage.removeItem('token');
         state.token = null;
+        state.isLoadingInbox = false;
     }
 }
 
@@ -300,6 +312,7 @@ async function loadEmails(reset = true, useAI = false) {
             state.emails = [];
             state.pagination.nextPageToken = null;
             state.pagination.hasMore = true;
+            state.currentLabel = null; // Clear label when loading inbox
             
             // Start loading message rotation
             state.loading.messageIndex = 0;
@@ -311,6 +324,12 @@ async function loadEmails(reset = true, useAI = false) {
         state.pagination.isLoadingMore = true;
         
         let url = `${API_URL}/emails?maxResults=10`;
+        
+        // Add label parameter if we're in a specific view
+        if (state.currentLabel) {
+            url += `&label=${state.currentLabel}`;
+        }
+        
         if (state.pagination.nextPageToken) {
             url += `&pageToken=${state.pagination.nextPageToken}`;
         }
@@ -752,6 +771,10 @@ function showEmail(emailId) {
 function switchView(view) {
     state.currentView = view;
     state.searchQuery = '';
+    state.emails = []; // Clear emails immediately
+    state.currentLabel = null; // Clear label
+    state.isLoadingInbox = false; // Stop inbox loading
+    state.pagination.hasMore = false; // Stop any ongoing pagination
     if (searchInput) searchInput.value = '';
     
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -764,15 +787,109 @@ function switchView(view) {
     if (view === 'inbox') {
         priorityTabs.style.display = 'flex';
         
-        // Only load emails if we don't have any yet
-        if (state.emails.length === 0) {
-            loadEmails();
-        } else {
-            renderEmailList();
-        }
+        // Always reload emails for inbox
+        loadEmails();
     } else {
         priorityTabs.style.display = 'none';
+        loadViewEmails(view);
+    }
+}
+
+async function loadViewEmails(view) {
+    try {
+        // CRITICAL: Stop any inbox loading immediately
+        state.isLoadingInbox = false;
+        state.pagination.isLoadingMore = false;
+        
+        // Clear emails immediately to prevent showing stale data
+        state.emails = [];
+        state.currentPriority = 'all'; // Reset priority filter
+        
+        // Clear the UI immediately
+        emailList.innerHTML = '<div class="email-list-container"><p style="color: var(--text-light); text-align: center; padding: 3rem;">Loading...</p></div>';
+        
+        loadingBar.classList.remove('hidden');
+        emailList.style.display = 'block';
+        
+        let label = '';
+        switch(view) {
+            case 'sent':
+                label = 'SENT';
+                break;
+            case 'drafts':
+                label = 'DRAFT';
+                break;
+            case 'starred':
+                label = 'STARRED';
+                break;
+        }
+        
+        // Store current label in state for pagination
+        state.currentLabel = label;
+        
+        // If no label, show message
+        if (!label) {
+            showViewMessage(view);
+            return;
+        }
+        
+        // Reset pagination
+        state.pagination.nextPageToken = null;
+        state.pagination.hasMore = true;
+        
+        const response = await fetch(`${API_URL}/emails?label=${label}&maxResults=50`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load ${view} emails`);
+        }
+
+        const data = await response.json();
+        
+        // Check if we got any emails
+        if (!data.emails || data.emails.length === 0) {
+            showViewMessage(view);
+            return;
+        }
+        
+        // CRITICAL: Clear emails again before adding new ones
+        state.emails = [];
+        
+        state.pagination.nextPageToken = data.nextPageToken || null;
+        state.pagination.hasMore = !!data.nextPageToken;
+        
+        for (const email of data.emails) {
+            const fromMatch = email.from.match(/(.+?)\s*<(.+)>/);
+            const name = fromMatch ? fromMatch[1].trim().replace(/"/g, '') : email.from;
+            const emailAddr = fromMatch ? fromMatch[2] : email.from;
+            
+            state.emails.push({
+                id: email.id,
+                from: { 
+                    name: name,
+                    email: emailAddr,
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=84A98C&color=fff&size=128`
+                },
+                subject: email.subject || '(No Subject)',
+                preview: email.snippet || '',
+                body: email.body || email.snippet || '',
+                htmlBody: email.htmlBody || '',
+                date: new Date(email.date),
+                unread: email.unread,
+                priority: email.priority || 'later'
+            });
+        }
+        
+        renderEmailList();
+    } catch (error) {
+        console.error(`Failed to load ${view} emails:`, error);
         showViewMessage(view);
+    } finally {
+        loadingBar.classList.add('hidden');
+        emailList.style.display = 'block';
     }
 }
 
@@ -780,8 +897,7 @@ function showViewMessage(view) {
     const messages = {
         sent: 'Sent emails will appear here',
         drafts: 'Draft emails will appear here',
-        starred: 'Starred emails will appear here',
-        trash: 'Deleted emails will appear here'
+        starred: 'Starred emails will appear here'
     };
     
     emailList.innerHTML = `<div class="email-list-container"><p style="color: var(--text-light); text-align: center; padding: 3rem;">${messages[view] || 'No emails'}</p></div>`;

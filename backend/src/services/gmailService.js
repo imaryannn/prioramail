@@ -81,15 +81,46 @@ function keywordBasedCategorization(email) {
 }
 
 export const gmailService = {
-  async getEmails(user, maxResults = 10, pageToken = null, useAI = false) {
+  async getEmails(user, maxResults = 10, pageToken = null, useAI = false, label = null) {
     const gmail = googleAuthService.getGmailClient(user.accessToken, user.refreshToken);
     
-    const response = await gmail.users.messages.list({
+    // Build query based on label
+    let query = '';
+    let labelIds = [];
+    
+    if (label) {
+      // Use labelIds for better filtering
+      switch(label) {
+        case 'SENT':
+          // Use SENT labelId - this is the proper way to get sent emails
+          labelIds = ['SENT'];
+          break;
+        case 'DRAFT':
+          labelIds = ['DRAFT'];
+          break;
+        case 'STARRED':
+          labelIds = ['STARRED'];
+          break;
+        default:
+          query = 'in:inbox';
+      }
+    } else {
+      query = 'in:inbox';
+    }
+    
+    const listParams = {
       userId: 'me',
       maxResults: maxResults,
-      q: 'in:inbox',
       pageToken: pageToken
-    });
+    };
+    
+    if (labelIds.length > 0 && !query) {
+      listParams.labelIds = labelIds;
+    } else {
+      listParams.q = query;
+    }
+    
+    const response = await gmail.users.messages.list(listParams);
 
     if (!response.data.messages || response.data.messages.length === 0) {
       return { emails: [], nextPageToken: null };
@@ -111,7 +142,16 @@ export const gmailService = {
       return parsed;
     });
 
-    const emails = await Promise.all(emailPromises);
+    let emails = await Promise.all(emailPromises);
+    
+    // For SENT view, filter out emails that don't have user's email in From header
+    if (label === 'SENT') {
+      const userEmail = user.email.toLowerCase();
+      emails = emails.filter(email => {
+        const fromEmail = email.from.toLowerCase();
+        return fromEmail.includes(userEmail);
+      });
+    }
     
     return {
       emails,
