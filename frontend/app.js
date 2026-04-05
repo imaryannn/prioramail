@@ -36,7 +36,7 @@ const loadingMessages = [
     "Just a moment..."
 ];
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://backendprioramail.vercel.app';
 
 // DOM Elements
 const loginScreen = document.getElementById('login-screen');
