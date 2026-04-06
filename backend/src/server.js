@@ -19,7 +19,7 @@ app.use(cors({
     'http://localhost:5500',
     'https://prioramail.vercel.app',
     process.env.FRONTEND_URL
-  ].filter(Boolean),
+  ].filter(Boolean), 
   credentials: true,
 }));
 
