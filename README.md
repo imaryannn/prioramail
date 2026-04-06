@@ -61,7 +61,7 @@ Rich text editor with formatting toolbar and attachment support.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/prioramail.git
+git clone https://github.com/imaryannn/prioramail.git
 cd prioramail
 ```
 
@@ -294,7 +294,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Aryan**
 - Email: thatsaryn@gmail.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@imaryannn](https://github.com/imaryannn)
 
 ## 🙏 Acknowledgments
 
