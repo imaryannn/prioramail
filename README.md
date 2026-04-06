@@ -20,17 +20,6 @@
 
 Visit [https://prioramail.vercel.app](https://prioramail.vercel.app) to try it out!
 
-## 📸 Screenshots
-
-### Login Screen
-Clean, modern landing page with feature highlights.
-
-### Inbox View
-Organized email list with smart categorization and priority tabs.
-
-### Compose Email
-Rich text editor with formatting toolbar and attachment support.
-
 ## 🛠️ Tech Stack
 
 ### Frontend
