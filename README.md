@@ -3,7 +3,7 @@
 > Your inbox, reimagined. A smart email client that helps you focus on what matters.
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success)](https://prioramail.vercel.app)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ## 🌟 Features
 
@@ -288,7 +288,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is proprietary software. All rights reserved.
+
+Unauthorized copying, modification, distribution, or use of this software is strictly prohibited without explicit permission from the author.
 
 ## 👨‍💻 Author
 
