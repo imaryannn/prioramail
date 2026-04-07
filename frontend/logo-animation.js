@@ -19,6 +19,6 @@ window.addEventListener('load', () => {
             setTimeout(runAnimation, 3000);
         }, 7300);
     }
-    
+            
     setTimeout(runAnimation, 500);
 });
