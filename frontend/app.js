@@ -222,28 +222,24 @@ async function handleGoogleLogin() {
         const data = await response.json();
         window.location.href = data.authUrl;
     } catch (error) {
-        console.error('Login failed:', error);
         showToast('Login failed. Please try again.', 'error');
     }
 }
 
 async function loadUserProfile() {
     try {
-        console.log('Loading user profile with token:', state.token);
         const response = await fetch(`${API_URL}/auth/profile`, {
             headers: {
                 'Authorization': `Bearer ${state.token}`
             }
         });
 
-        console.log('Profile response status:', response.status);
 
         if (!response.ok) {
             throw new Error('Failed to load profile');
         }
 
         const user = await response.json();
-        console.log('User loaded:', user);
         state.user = user;
         showMainScreen();
         
@@ -262,7 +258,6 @@ async function loadUserProfile() {
         
         state.isLoadingInbox = false;
     } catch (error) {
-        console.error('Failed to load profile:', error);
         localStorage.removeItem('token');
         state.token = null;
         state.isLoadingInbox = false;
@@ -278,7 +273,6 @@ async function handleLogout() {
             }
         });
     } catch (error) {
-        console.error('Logout error:', error);
     } finally {
         // Clear local state
         localStorage.removeItem('token');
@@ -293,17 +287,13 @@ async function handleLogout() {
 }
 
 function showMainScreen() {
-    console.log('showMainScreen called');
-    console.log('User:', state.user);
     loginScreen.classList.remove('active');
     mainScreen.classList.add('active');
-    console.log('Screen classes updated');
     
     // Update user info
     const avatar = state.user.picture || generateAvatar(state.user.name);
     document.getElementById('user-avatar').src = avatar;
     document.getElementById('user-email').textContent = state.user.email;
-    console.log('User info updated');
 }
 
 function generateAvatar(name) {
@@ -315,7 +305,6 @@ function generateAvatar(name) {
 async function loadEmails(reset = true, useAI = false) {
     try {
         if (reset) {
-            console.log('loadEmails called');
             loadingBar.classList.remove('hidden');
             loadingSpinner.classList.remove('hidden');
             emailList.style.display = 'none';
@@ -355,8 +344,6 @@ async function loadEmails(reset = true, useAI = false) {
         }
 
         const data = await response.json();
-        console.log('Backend response:', data);
-        console.log('Number of emails received:', data.emails.length);
         
         state.pagination.nextPageToken = data.nextPageToken || null;
         state.pagination.hasMore = !!data.nextPageToken;
@@ -366,7 +353,6 @@ async function loadEmails(reset = true, useAI = false) {
         
         for (let i = 0; i < data.emails.length; i++) {
             const email = data.emails[i];
-            console.log(`Email ${i}: subject="${email.subject}", priority="${email.priority}"`);
             const fromMatch = email.from.match(/(.+?)\s*<(.+)>/);
             const name = fromMatch ? fromMatch[1].trim().replace(/"/g, '') : email.from;
             const emailAddr = fromMatch ? fromMatch[2] : email.from;
@@ -395,11 +381,8 @@ async function loadEmails(reset = true, useAI = false) {
         state.pagination.totalEmails = state.emails.length;
         if (reset) state.pagination.currentPage = 1;
         
-        console.log('Emails loaded:', state.emails.length);
         renderEmailList();
-        console.log('Email list rendered');
     } catch (error) {
-        console.error('Failed to load emails:', error);
     } finally {
         state.pagination.isLoadingMore = false;
         if (reset) {
@@ -594,9 +577,6 @@ function getMockEmails() {
 
 // Rendering
 function renderEmailList() {
-    console.log('renderEmailList called');
-    console.log('Total emails in state:', state.emails.length);
-    console.log('Current priority filter:', state.currentPriority);
     
     let filteredEmails = state.emails;
     
@@ -614,7 +594,6 @@ function renderEmailList() {
         );
     }
     
-    console.log('Filtered emails count:', filteredEmails.length);
     
     // Log priority distribution (only if not showing all or latest)
     if (state.currentPriority !== 'all' && state.currentPriority !== 'latest') {
@@ -622,7 +601,6 @@ function renderEmailList() {
         state.emails.forEach(email => {
             priorityCounts[email.priority] = (priorityCounts[email.priority] || 0) + 1;
         });
-        console.log('Priority distribution:', priorityCounts);
     }
 
     // Apply search filter
@@ -684,12 +662,10 @@ function handleScroll() {
     const scrollHeight = emailList.scrollHeight;
     const clientHeight = emailList.clientHeight;
     
-    console.log('Scroll event:', { scrollTop, scrollHeight, clientHeight, hasMore: state.pagination.hasMore, isLoadingMore: state.pagination.isLoadingMore });
     
     if (scrollTop + clientHeight >= scrollHeight - 100 && 
         state.pagination.hasMore && 
         !state.pagination.isLoadingMore) {
-        console.log('Loading more emails...');
         loadEmails(false, false);
     }
 }
@@ -754,7 +730,6 @@ function showEmail(emailId) {
     
     // Sanitize and render HTML emails properly
     if (email.htmlBody && email.htmlBody.trim()) {
-        console.log('HTML Body (first 200 chars):', email.htmlBody.substring(0, 200));
         
         // Create iframe for safe HTML rendering
         const iframe = document.createElement('iframe');
@@ -985,7 +960,6 @@ async function loadViewEmails(view) {
         
         renderEmailList();
     } catch (error) {
-        console.error(`Failed to load ${view} emails:`, error);
         showViewMessage(view);
     } finally {
         loadingBar.classList.add('hidden');
@@ -1151,14 +1125,12 @@ async function handleSendEmail(e) {
                     }
                 });
             } catch (error) {
-                console.error('Failed to delete draft after sending:', error);
             }
         }
         
         showToast('Email sent successfully!', 'success');
         closeComposeModal();
     } catch (error) {
-        console.error('Failed to send email:', error);
         showToast('Failed to send email. Please try again.', 'error');
     } finally {
         // Reset button state
@@ -1220,7 +1192,6 @@ function downloadAttachment(url, filename) {
             document.body.removeChild(a);
         })
         .catch(error => {
-            console.error('Download failed:', error);
             alert('Failed to download attachment');
         });
 }
@@ -1244,7 +1215,6 @@ function loadImagePreview(url, attachmentId, filename) {
             }
         })
         .catch(error => {
-            console.error('Failed to load image preview:', error);
             const previewDiv = document.getElementById(`img-preview-${attachmentId}`);
             if (previewDiv) {
                 previewDiv.style.display = 'none';
@@ -1521,7 +1491,6 @@ async function handleSaveDraft() {
         showToast('Draft saved successfully!', 'success');
         closeComposeModal();
     } catch (error) {
-        console.error('Failed to save draft:', error);
         showToast('Failed to save draft. Please try again.', 'error');
     } finally {
         saveDraftBtn.disabled = false;
